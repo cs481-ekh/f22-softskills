@@ -2,6 +2,3 @@ node_modules
 webserver/node_modules
 webserver/build
 .idea
-prod-data/database/*
-prod-data/webserver/*
-!*.gitkeep
