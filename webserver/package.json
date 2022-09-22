@@ -20,6 +20,10 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@sveltejs/adapter-node": "^1.0.0-next.95"
+		"@google-cloud/local-auth": "^2.1.0",
+		"@sveltejs/adapter-node": "^1.0.0-next.95",
+		"googleapis": "^105.0.0",
+		"lucia-sveltekit": "^0.8.6",
+		"pg": "^8.8.0"
 	}
 }
