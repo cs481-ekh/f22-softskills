@@ -1,0 +1,36 @@
+version: "3.7"
+
+services:
+  database:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB
+    volumes:
+      - database-vol:/var/lib/postgresql/data/:rw
+  webserver:
+    build:
+      context: webserver
+    ports:
+      - 3000:3000
+    volumes:
+      - webserver-vol:/webserver:rw
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+volumes:
+  webserver-vol:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./prod-data/webserver
+  database-vol:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./prod-data/database
