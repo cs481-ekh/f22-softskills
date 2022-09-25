@@ -14,4 +14,7 @@ export type Permission = {
     deleted: boolean
 }
 
+export type Role = "owner" | "organizer" | "fileOrganizer" | "writer" | "commenter" | "reader";
+export type GranteeType = "user" | "group" | "domain" | "anyone"
+
 
