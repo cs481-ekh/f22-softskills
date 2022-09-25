@@ -14,5 +14,12 @@ interface IDrivePermissionManager{
      * @returns [Permission] || []
      */
     getPermissions: (s: string) => [Permission]
+    /**
+     * Deletes the permission identified by permissionId from the file
+     * identified by fileId.
+     * @param fileId the id of the file to remove the permission from
+     * @param permissionId the id of the permission to remove
+     */
+    deletePermission: (fileId: string, permissionId: string) => void
 }
 
