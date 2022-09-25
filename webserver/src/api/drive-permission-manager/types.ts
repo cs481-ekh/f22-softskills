@@ -4,7 +4,14 @@ export type File = {
     name: string;
     parents: [string];
     owners: [string];
-    permissions: [string];
+    permissions: [Permission];
+}
+export type Permission = {
+    id: string
+    emailAddress: string
+    type: string
+    expirationDate: number
+    deleted: boolean
 }
 
 
