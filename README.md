@@ -1,4 +1,4 @@
 # Institute for Pervasive Cybersecurity Google Drive Permission Manager
 
-![Status Bade](https://github.com/<OWNER>/<REPOSITORY>/actions/workflows/<WORKFLOW_FILE>/badge.svg)
+![Status Badge](https://github.com/<cs481-ekh>/<f22-softskills/blob/ethanfrech-ci-3>/actions/workflows/<test-ci-2.yml>/badge.svg)
 
