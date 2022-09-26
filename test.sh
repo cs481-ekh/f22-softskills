@@ -1,2 +1,2 @@
 #!/bin/bash
-exit 127
+echo 123456
