@@ -2,9 +2,12 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "ethanfrech-ci-3" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
+
+    
 
 jobs:
 
