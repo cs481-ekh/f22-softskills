@@ -22,5 +22,5 @@ jobs:
     - uses: isbang/compose-action@v1.2.0
       with:
         compose-file: "./docker-compose.yml"
-    - run: test.sh
+    - run: ./test.sh
    
