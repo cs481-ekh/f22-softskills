@@ -1,7 +1,3 @@
-/**
- * TODO: Take advantage of TS and static typing
- */
-
 // ==========
 //    MISC
 // ==========
