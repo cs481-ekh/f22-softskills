@@ -1,2 +1,6 @@
 #!/bin/bash
-exit 127
+
+docker-compose build
+exit 0
+
+

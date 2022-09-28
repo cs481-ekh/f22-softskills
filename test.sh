@@ -1,2 +1,4 @@
 #!/bin/bash
-exit 127
+
+echo 152195
+exit 0
