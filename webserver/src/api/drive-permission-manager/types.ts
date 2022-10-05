@@ -1,19 +1,26 @@
-export type File = {
+export type File =  {
     id: string;
     kind: string;
     name: string;
-    parents: [string];
-    owners: [string];
-    permissions: [Permission];
+    parents: string[];
+    children?: string[];
+    owners: any[];
+    permissions: Permission[];
 }
 export type Permission = {
     id: string
     emailAddress: string
-    type: string
-    expirationDate: number
+    type: GranteeType | string
+    role: Role | string
+    expirationDate?: string | number
     deleted: boolean
+    pendingOwner?: boolean
+    user: User
 }
-
+export type User = {
+    displayName: string
+    emailAddress: string
+}
 export type Role = "owner" | "organizer" | "fileOrganizer" | "writer" | "commenter" | "reader";
 export type GranteeType = "user" | "group" | "domain" | "anyone"
 
