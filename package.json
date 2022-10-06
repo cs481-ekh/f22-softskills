@@ -7,6 +7,8 @@
     "doc": "docs"
   },
   "scripts": {
+    "start": "docker-compose up",
+    "build": "docker-compose build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -21,7 +23,6 @@
   "homepage": "https://github.com/cs481-ekh/f22-softskills#readme",
   "dependencies": {
     "@google-cloud/local-auth": "^2.1.1",
-    "@sveltejs/kit": "^1.0.0-next.484",
     "google-auth-library": "^8.5.1",
     "googleapis": "^107.0.0",
     "postgres": "^3.2.4"

@@ -1,29 +1,19 @@
 {
 	"name": "webserver",
 	"version": "0.0.1",
+	"main": "index.js",
 	"private": true,
 	"scripts": {
-		"dev": "vite dev",
-		"build": "vite build",
-		"preview": "vite preview",
-		"test": "playwright test",
+		"start": "node index.js",
 		"lint": "eslint ."
 	},
 	"devDependencies": {
-		"@playwright/test": "^1.25.0",
-		"@sveltejs/adapter-auto": "next",
-		"@sveltejs/kit": "next",
-		"eslint": "^8.16.0",
-		"eslint-plugin-svelte3": "^4.0.0",
-		"svelte": "^3.44.0",
-		"vite": "^3.1.0"
+		"eslint": "^8.16.0"
 	},
-	"type": "module",
+	"type": "commonjs",
 	"dependencies": {
 		"@google-cloud/local-auth": "^2.1.0",
-		"@sveltejs/adapter-node": "^1.0.0-next.95",
-		"googleapis": "^105.0.0",
-		"lucia-sveltekit": "^0.8.6",
-		"pg": "^8.8.0"
+		"ejs": "^3.1.8",
+		"express": "^4.18.1"
 	}
 }
