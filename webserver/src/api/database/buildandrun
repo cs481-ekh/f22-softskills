@@ -1,3 +1,4 @@
-tsc postgres.ts
-mv postgres.js postgres.cjs
-POSTGRES_HOST=localhost POSTGRES_PORT=5432 POSTGRES_USER=user POSTGRES_PASSWORD=pass POSTGRES_DATABASE=default_database node postgres.cjs
+rm -f *.js
+tsc testing.ts
+# mv testing.js testing.cjs
+POSTGRES_HOST=localhost POSTGRES_PORT=5432 POSTGRES_USER=user POSTGRES_PASSWORD=pass POSTGRES_DATABASE=default_database node testing.js
