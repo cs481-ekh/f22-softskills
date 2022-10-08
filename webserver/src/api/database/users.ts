@@ -30,6 +30,7 @@ export class Users {
      * was unsuccessful.
      * 
      * @param user - User object to create in database
+     * @param callback - Callback function to run
      * @returns - User object created in database
      */
     async create(user: User, callback?: Function): Promise<User | undefined> {
@@ -50,6 +51,7 @@ export class Users {
      * Reads the user entry with the desired email
      * 
      * @param email - Email of user to find
+     * @param callback - Callback function to run
      * @returns - Desired user object, or undefined if not found
      */
     async read(email: String, callback?: Function): Promise<User | undefined> {
@@ -79,7 +81,8 @@ export class Users {
     async update(user: User, callback?: Function): Promise<User | undefined> {
         let userOut: User | undefined;
         await this.pool.query("UPDATE Users SET EMAIL = '" + user.emailAddress
-            + "', DISPLAY_NAME = '" + user.displayName + "';", err => {
+            + "', DISPLAY_NAME = '" + user.displayName + "' WHERE EMAIL ='"
+            + user.emailAddress + "';", err => {
                 if (err)
                     console.error(err);
                 else
@@ -99,17 +102,17 @@ export class Users {
      */
     async delete(email: String, callback?: Function): Promise<User | undefined> {
         let user: User | undefined;
-        console.log(email);
         await this.pool.query("DELETE FROM Users WHERE EMAIL LIKE '" + email + "';", (err, res) => {
-            console.error(err);
-            console.log(res);
             if (err)
                 console.error(err);
             else
-                user = res.rows[0];
+                user = {
+                    emailAddress: res.rows[0].email,
+                    displayName: res.rows[0].display_name
+                };
             if (callback)
                 callback(user, err);
-        })
+        });
         return user;
     }
 

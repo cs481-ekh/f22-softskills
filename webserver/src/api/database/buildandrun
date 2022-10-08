@@ -1,4 +1,4 @@
 rm -f *.js
 tsc testing.ts
 # mv testing.js testing.cjs
-POSTGRES_HOST=localhost POSTGRES_PORT=5432 POSTGRES_USER=user POSTGRES_PASSWORD=pass POSTGRES_DATABASE=default_database node testing.js
+POSTGRES_HOST=localhost POSTGRES_PORT=5432 POSTGRES_USER=user POSTGRES_PASSWORD=pass POSTGRES_DATABASE=drive-cache node testing.js
