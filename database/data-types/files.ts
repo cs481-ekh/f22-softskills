@@ -1,11 +1,14 @@
 import { Pool } from 'pg';
 import { File, Permission } from '../../drive-permission-manager/src/types';
+import { Permissions } from './permissions';
 
 export class Files {
     private pool: Pool;
+    private permissions: Permissions;
 
-    constructor(pool: Pool) {
+    constructor(pool: Pool, permissions: Permissions) {
         this.pool = pool;
+        this.permissions = permissions;
     }
 
     /**
@@ -67,10 +70,16 @@ export class Files {
      */
     async read(id: String, callback?: Function): Promise<File | undefined> {
         let file: File | undefined;
-        await this.pool.query("SELECT * FROM Files WHERE ID LIKE '" + id + "';").then(res => {
+        await this.pool.query("SELECT * FROM Files WHERE ID LIKE '" + id + "';").then(async res => {
             if (!res)
                 console.error("Error in files.read");
-            else
+            else {
+                let perms: Permission[] = [];
+                for (let i = 0; i < res.rows.length; i++) {
+                    let temp = await this.permissions.read(res.rows[0].permissions[i]);
+                    if (temp)
+                        perms.push(temp);
+                }
                 file = {
                     id: res.rows[0].id,
                     kind: res.rows[0].kind,
@@ -78,11 +87,11 @@ export class Files {
                     parents: res.rows[0].parents,
                     children: res.rows[0].children,
                     owners: res.rows[0].owners,
-                    // TODO: query database for relevant permission entries and return here
-                    permissions: res.rows[0].permissions
+                    permissions: perms
                 };
-            if (callback)
-                callback(file);
+                if (callback)
+                    callback(file);
+            }
         });
         return Promise.resolve(file);
     }
@@ -122,10 +131,16 @@ export class Files {
      */
     async delete(id: string, callback?: Function): Promise<File | undefined> {
         let file: File | undefined;
-        await this.pool.query("DELETE FROM Files WHERE ID LIKE '" + id + "' RETURNING *;").then(res => {
+        await this.pool.query("DELETE FROM Files WHERE ID LIKE '" + id + "' RETURNING *;").then(async res => {
             if (!res)
                 console.error("Error in files.delete");
-            else
+            else {
+                let perms: Permission[] = [];
+                for (let i = 0; i < res.rows.length; i++) {
+                    let temp = await this.permissions.read(res.rows[0].permissions[i]);
+                    if (temp)
+                        perms.push(temp);
+                }
                 file = {
                     id: res.rows[0].id,
                     kind: res.rows[0].kind,
@@ -133,11 +148,11 @@ export class Files {
                     parents: res.rows[0].parents,
                     children: res.rows[0].children,
                     owners: res.rows[0].owners,
-                    // TODO: query database for relevant permission entries and return here
-                    permissions: res.rows[0].permissions
+                    permissions: perms
                 };
-            if (callback)
-                callback(file);
+                if (callback)
+                    callback(file);
+            }
         });
         return Promise.resolve(file);
     }

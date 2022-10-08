@@ -6,7 +6,7 @@ import { Permissions } from './data-types/permissions';
 /**
  * Class to interact with all data types in the database
  */
-export class Postgres {
+ export class Postgres {
     private pool: Pool;
     users: Users;
     files: Files;
@@ -21,8 +21,8 @@ export class Postgres {
             database: process.env.POSTGRES_DATABASE
         });
         this.users = new Users(this.pool);
-        this.files = new Files(this.pool);
-        this.permissions = new Permissions(this.pool);
+        this.permissions = new Permissions(this.pool, this.users);
+        this.files = new Files(this.pool, this.permissions);
     }
 
     /**

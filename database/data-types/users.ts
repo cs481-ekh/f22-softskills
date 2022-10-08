@@ -101,7 +101,7 @@ export class Users {
      */
     async delete(email: String, callback?: Function): Promise<User | undefined> {
         let user: User | undefined;
-        await this.pool.query("DELETE FROM Users WHERE EMAIL LIKE '" + email + "';").then(res => {
+        await this.pool.query("DELETE FROM Users WHERE EMAIL LIKE '" + email + "' RETURNING *;").then(res => {
             if (!res)
                 console.error("Error in users.delete");
             else

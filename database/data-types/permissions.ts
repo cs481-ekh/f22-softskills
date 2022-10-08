@@ -1,11 +1,14 @@
 import { Pool } from 'pg';
 import { Permission } from '../../drive-permission-manager/src/types';
+import { Users } from './users';
 
 export class Permissions {
     private pool: Pool;
+    private users: Users;
 
-    constructor(pool: Pool) {
+    constructor(pool: Pool, users: Users) {
         this.pool = pool;
+        this.users = users;
     }
 
     /**
@@ -69,21 +72,25 @@ export class Permissions {
     async read(id: String, callback?: Function): Promise<Permission | undefined> {
         let permOut: Permission | undefined;
         await this.pool.query("SELECT * FROM Permissions WHERE ID LIKE '"
-            + id + "';").then(res => {
+            + id + "';").then(async res => {
                 if (!res)
                     console.error("Error in permissions.read");
-                else
-                    permOut = {
-                        id: res.rows[0].id,
-                        emailAddress: res.rows[0].email,
-                        type: res.rows[0].type,
-                        role: res.rows[0].role,
-                        expirationDate: res.rows[0].expiration_date,
-                        deleted: res.rows[0].deleted,
-                        pendingOwner: res.rows[0].pending_owner,
-                        // TODO: replace id with user object
-                        user: res.rows[0].grantee_user
-                    };
+                else {
+                    let user = await this.users.read(res.rows[0].grantee_user);
+                    if (user)
+                        permOut = {
+                            id: res.rows[0].id,
+                            emailAddress: res.rows[0].email,
+                            type: res.rows[0].type,
+                            role: res.rows[0].role,
+                            expirationDate: res.rows[0].expiration_date,
+                            deleted: res.rows[0].deleted,
+                            pendingOwner: res.rows[0].pending_owner,
+                            user: user
+                        };
+                    else
+                        console.error("Error in permissions.read");
+                }
                 if (callback)
                     callback(permOut);
             });
@@ -125,21 +132,25 @@ export class Permissions {
      */
     async delete(id: string, callback?: Function): Promise<Permission | undefined> {
         let permOut: Permission | undefined;
-        await this.pool.query("DELETE FROM Permissions WHERE ID LIKE '" + id + "' RETURNING *;").then(res => {
+        await this.pool.query("DELETE FROM Permissions WHERE ID LIKE '" + id + "' RETURNING *;").then(async res => {
             if (!res)
                 console.error("Error in permissions.delete");
-            else
-                permOut = {
-                    id: res.rows[0].id,
-                    emailAddress: res.rows[0].email,
-                    type: res.rows[0].type,
-                    role: res.rows[0].role,
-                    expirationDate: res.rows[0].expiration_date,
-                    deleted: res.rows[0].deleted,
-                    pendingOwner: res.rows[0].pending_owner,
-                    // TODO: replace id with user object
-                    user: res.rows[0].grantee_user
-                };
+            else {
+                let user = await this.users.read(res.rows[0].grantee_user);
+                if (user)
+                    permOut = {
+                        id: res.rows[0].id,
+                        emailAddress: res.rows[0].email,
+                        type: res.rows[0].type,
+                        role: res.rows[0].role,
+                        expirationDate: res.rows[0].expiration_date,
+                        deleted: res.rows[0].deleted,
+                        pendingOwner: res.rows[0].pending_owner,
+                        user: user
+                    };
+                else
+                    console.error("Error in permissions.read");
+            }
             if (callback)
                 callback(permOut);
         });
