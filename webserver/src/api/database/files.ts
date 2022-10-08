@@ -43,11 +43,6 @@ export class Files {
      */
     async create(file: File, callback?: Function): Promise<File | undefined> {
         let fileOut: File | undefined;
-        console.log("INSERT INTO Files (ID, KIND, NAME, PARENTS, CHILDREN, OWNERS, "
-            + "PERMISSIONS) VALUES ('" + file.id + "', '" + file.kind + "', '" + file.name
-            + "', '" + this.arrayToString(file.parents) + "', '" + this.arrayToString(file.children)
-            + "', '" + this.arrayToString(file.owners) + "', '" + this.permArrayToString(file.permissions)
-            + "');");
         await this.pool.query("INSERT INTO Files (ID, KIND, NAME, PARENTS, CHILDREN, OWNERS, "
             + "PERMISSIONS) VALUES ('" + file.id + "', '" + file.kind + "', '" + file.name
             + "', '" + this.arrayToString(file.parents) + "', '" + this.arrayToString(file.children)
