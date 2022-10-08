@@ -1,9 +1,11 @@
 import { Pool } from 'pg';
+import { Files } from './files';
 import { Users } from './users';
 
 export class Postgres {
     private pool: Pool;
     users: Users;
+    files: Files;
 
     constructor() {
         this.pool = new Pool({
@@ -15,6 +17,7 @@ export class Postgres {
         });
         // this.initDatabases();
         this.users = new Users(this.pool);
+        this.files = new Files(this.pool);
     }
 
     close() {
