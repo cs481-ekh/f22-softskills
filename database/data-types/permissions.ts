@@ -27,9 +27,9 @@ export class Permissions {
         await this.pool.query("CREATE TABLE IF NOT EXISTS Permissions "
             + "(ID TEXT PRIMARY KEY NOT NULL, EMAIL TEXT, TYPE TEXT NOT NULL, "
             + "ROLE TEXT, EXPIRATION_DATE TEXT, DELETED BOOLEAN NOT NULL, "
-            + "PENDING_OWNER BOOLEAN, GRANTEE_USER TEXT NOT NULL);", err => {
-                if (err)
-                    console.error(err);
+            + "PENDING_OWNER BOOLEAN, GRANTEE_USER TEXT NOT NULL);").then(res => {
+                if (!res)
+                    console.error("Error in permissions.initTable");
             });
     }
 
@@ -47,14 +47,14 @@ export class Permissions {
             + "DELETED, PENDING_OWNER, GRANTEE_USER) VALUES ('" + permission.id + "', '"
             + permission.emailAddress + "', '" + permission.type + "', '" + permission.role
             + "', '" + permission.expirationDate + "', '" + permission.deleted + "', '"
-            + permission.pendingOwner + "', '" + permission.user.emailAddress + "');", err => {
-                if (err)
-                    console.error(err);
+            + permission.pendingOwner + "', '" + permission.user.emailAddress + "');").then(res => {
+                if (!res)
+                    console.error("Error in permissions.create");
                 else
                     permOut = permission;
                 if (callback)
                     callback(permOut);
-            })
+            });
         return permOut;
     }
 
@@ -69,9 +69,9 @@ export class Permissions {
     async read(id: String, callback?: Function): Promise<Permission | undefined> {
         let permOut: Permission | undefined;
         await this.pool.query("SELECT * FROM Permissions WHERE ID LIKE '"
-            + id + "';", (err, res) => {
-                if (err)
-                    console.error(err);
+            + id + "';").then(res => {
+                if (!res)
+                    console.error("Error in permissions.read");
                 else
                     permOut = {
                         id: res.rows[0].id,
@@ -104,14 +104,14 @@ export class Permissions {
             + permission.emailAddress + "', TYPE = '" + permission.type + "', ROLE = '"
             + permission.role + "', EXPIRATION_DATE = '" + permission.expirationDate + "', DELETED = '"
             + permission.deleted + "', PENDING_OWNER = '" + permission.pendingOwner + "', GRANTEE_USER = '"
-            + permission.user.emailAddress + "' WHERE ID = '" + permission.id + "';", err => {
-                if (err)
-                    console.error(err);
+            + permission.user.emailAddress + "' WHERE ID = '" + permission.id + "';").then(res => {
+                if (!res)
+                    console.error("Error in permissions.update");
                 else
                     permOut = permission;
                 if (callback)
                     callback(permOut);
-            })
+            });
         return permOut;
     }
 
@@ -125,25 +125,24 @@ export class Permissions {
      */
     async delete(id: string, callback?: Function): Promise<Permission | undefined> {
         let permOut: Permission | undefined;
-        await this.pool.query("DELETE FROM Permissions WHERE ID LIKE '" + id + "' RETURNING *;",
-            (err, res) => {
-                if (err)
-                    console.error(err);
-                else
-                    permOut = {
-                        id: res.rows[0].id,
-                        emailAddress: res.rows[0].email,
-                        type: res.rows[0].type,
-                        role: res.rows[0].role,
-                        expirationDate: res.rows[0].expiration_date,
-                        deleted: res.rows[0].deleted,
-                        pendingOwner: res.rows[0].pending_owner,
-                        // TODO: replace id with user object
-                        user: res.rows[0].grantee_user
-                    };
-                if (callback)
-                    callback(permOut);
-            });
+        await this.pool.query("DELETE FROM Permissions WHERE ID LIKE '" + id + "' RETURNING *;").then(res => {
+            if (!res)
+                console.error("Error in permissions.delete");
+            else
+                permOut = {
+                    id: res.rows[0].id,
+                    emailAddress: res.rows[0].email,
+                    type: res.rows[0].type,
+                    role: res.rows[0].role,
+                    expirationDate: res.rows[0].expiration_date,
+                    deleted: res.rows[0].deleted,
+                    pendingOwner: res.rows[0].pending_owner,
+                    // TODO: replace id with user object
+                    user: res.rows[0].grantee_user
+                };
+            if (callback)
+                callback(permOut);
+        });
         return permOut;
     }
 }

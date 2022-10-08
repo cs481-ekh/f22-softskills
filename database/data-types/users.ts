@@ -17,9 +17,9 @@ export class Users {
      */
     async initTable() {
         await this.pool.query("CREATE TABLE IF NOT EXISTS Users (EMAIL TEXT PRIMARY KEY NOT NULL, "
-            + "DISPLAY_NAME TEXT NOT NULL);", err => {
-                if (err)
-                    console.error(err);
+            + "DISPLAY_NAME TEXT NOT NULL);").then(res => {
+                if (!res)
+                    console.error("Error in users.initTable");
             });
     }
 
@@ -35,9 +35,9 @@ export class Users {
     async create(user: User, callback?: Function): Promise<User | undefined> {
         let userOut: User | undefined;
         await this.pool.query("INSERT INTO Users (EMAIL, DISPLAY_NAME) "
-            + "VALUES ('" + user.emailAddress + "', '" + user.displayName + "');", err => {
-                if (err)
-                    console.error(err);
+            + "VALUES ('" + user.emailAddress + "', '" + user.displayName + "');").then(res => {
+                if (!res)
+                    console.error("Error in users.create");
                 else
                     userOut = user;
                 if (callback)
@@ -55,16 +55,16 @@ export class Users {
      */
     async read(email: String, callback?: Function): Promise<User | undefined> {
         let user: User | undefined;
-        await this.pool.query("SELECT * FROM Users WHERE EMAIL LIKE '" + email + "';", (err, res) => {
-            if (err)
-                console.error(err);
+        await this.pool.query("SELECT * FROM Users WHERE EMAIL LIKE '" + email + "';").then(res => {
+            if (!res)
+                console.error("Error in users.read");
             else
                 user = {
                     emailAddress: res.rows[0].email,
                     displayName: res.rows[0].display_name
                 };
             if (callback)
-                callback(user, err);
+                callback(user);
         });
         return user;
     }
@@ -81,9 +81,9 @@ export class Users {
         let userOut: User | undefined;
         await this.pool.query("UPDATE Users SET EMAIL = '" + user.emailAddress
             + "', DISPLAY_NAME = '" + user.displayName + "' WHERE EMAIL ='"
-            + user.emailAddress + "';", err => {
-                if (err)
-                    console.error(err);
+            + user.emailAddress + "';").then(res => {
+                if (!res)
+                    console.error("Error in users.update");
                 else
                     userOut = user;
                 if (callback)
@@ -101,16 +101,16 @@ export class Users {
      */
     async delete(email: String, callback?: Function): Promise<User | undefined> {
         let user: User | undefined;
-        await this.pool.query("DELETE FROM Users WHERE EMAIL LIKE '" + email + "';", (err, res) => {
-            if (err)
-                console.error(err);
+        await this.pool.query("DELETE FROM Users WHERE EMAIL LIKE '" + email + "';").then(res => {
+            if (!res)
+                console.error("Error in users.delete");
             else
                 user = {
                     emailAddress: res.rows[0].email,
                     displayName: res.rows[0].display_name
                 };
             if (callback)
-                callback(user, err);
+                callback(user);
         });
         return user;
     }

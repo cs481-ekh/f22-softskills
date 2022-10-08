@@ -25,9 +25,9 @@ export class Files {
     async initTable() {
         await this.pool.query("CREATE TABLE IF NOT EXISTS Files (ID TEXT PRIMARY KEY NOT NULL, "
             + "KIND TEXT NOT NULL, NAME TEXT, PARENTS TEXT[], CHILDREN TEXT[], OWNERS TEXT[], "
-            + "PERMISSIONS TEXT[]);", err => {
-                if (err)
-                    console.error(err);
+            + "PERMISSIONS TEXT[]);").then(res => {
+                if (!res)
+                    console.error("Error in files.initTable");
             });
     }
 
@@ -46,9 +46,9 @@ export class Files {
             + "PERMISSIONS) VALUES ('" + file.id + "', '" + file.kind + "', '" + file.name
             + "', '" + this.arrayToString(file.parents) + "', '" + this.arrayToString(file.children)
             + "', '" + this.arrayToString(file.owners) + "', '" + this.permArrayToString(file.permissions)
-            + "');", err => {
-                if (err)
-                    console.error(err);
+            + "');").then(res => {
+                if (!res)
+                    console.error("Error in files.create");
                 else
                     fileOut = file;
                 if (callback)
@@ -67,9 +67,9 @@ export class Files {
      */
     async read(id: String, callback?: Function): Promise<File | undefined> {
         let file: File | undefined;
-        await this.pool.query("SELECT * FROM Files WHERE ID LIKE '" + id + "';", (err, res) => {
-            if (err)
-                console.error(err);
+        await this.pool.query("SELECT * FROM Files WHERE ID LIKE '" + id + "';").then(res => {
+            if (!res)
+                console.error("Error in files.read");
             else
                 file = {
                     id: res.rows[0].id,
@@ -101,14 +101,14 @@ export class Files {
             + "', NAME = '" + file.name + "', PARENTS = '" + this.arrayToString(file.parents)
             + "', CHILDREN = '" + this.arrayToString(file.children) + "', OWNERS = '"
             + this.arrayToString(file.owners) + "', PERMISSIONS = '"
-            + this.permArrayToString(file.permissions) + "' WHERE ID = '" + file.id + "';", err => {
-                if (err)
-                    console.error(err);
+            + this.permArrayToString(file.permissions) + "' WHERE ID = '" + file.id + "';").then(res => {
+                if (!res)
+                    console.error("Error in files.update");
                 else
                     fileOut = file;
                 if (callback)
                     callback(fileOut);
-            })
+            });
         return fileOut;
     }
 
@@ -122,24 +122,23 @@ export class Files {
      */
     async delete(id: string, callback?: Function): Promise<File | undefined> {
         let file: File | undefined;
-        await this.pool.query("DELETE FROM Files WHERE ID LIKE '" + id + "' RETURNING *;",
-            (err, res) => {
-                if (err)
-                    console.error(err);
-                else
-                    file = {
-                        id: res.rows[0].id,
-                        kind: res.rows[0].kind,
-                        name: res.rows[0].name,
-                        parents: res.rows[0].parents,
-                        children: res.rows[0].children,
-                        owners: res.rows[0].owners,
-                        // TODO: query database for relevant permission entries and return here
-                        permissions: res.rows[0].permissions
-                    };
-                if (callback)
-                    callback(file);
-            });
+        await this.pool.query("DELETE FROM Files WHERE ID LIKE '" + id + "' RETURNING *;").then(res => {
+            if (!res)
+                console.error("Error in files.delete");
+            else
+                file = {
+                    id: res.rows[0].id,
+                    kind: res.rows[0].kind,
+                    name: res.rows[0].name,
+                    parents: res.rows[0].parents,
+                    children: res.rows[0].children,
+                    owners: res.rows[0].owners,
+                    // TODO: query database for relevant permission entries and return here
+                    permissions: res.rows[0].permissions
+                };
+            if (callback)
+                callback(file);
+        });
         return file;
     }
 
