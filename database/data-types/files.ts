@@ -54,7 +54,7 @@ export class Files {
                 if (callback)
                     callback(fileOut);
             });
-        return fileOut;
+        return Promise.resolve(fileOut);
     }
 
     /**
@@ -84,7 +84,7 @@ export class Files {
             if (callback)
                 callback(file);
         });
-        return file;
+        return Promise.resolve(file);
     }
 
     /**
@@ -109,7 +109,7 @@ export class Files {
                 if (callback)
                     callback(fileOut);
             });
-        return fileOut;
+        return Promise.resolve(fileOut);
     }
 
     /**
@@ -139,7 +139,7 @@ export class Files {
             if (callback)
                 callback(file);
         });
-        return file;
+        return Promise.resolve(file);
     }
 
     /**

@@ -55,7 +55,7 @@ export class Permissions {
                 if (callback)
                     callback(permOut);
             });
-        return permOut;
+        return Promise.resolve(permOut);
     }
 
     /**
@@ -87,7 +87,7 @@ export class Permissions {
                 if (callback)
                     callback(permOut);
             });
-        return permOut;
+        return Promise.resolve(permOut);
     }
 
     /**
@@ -112,7 +112,7 @@ export class Permissions {
                 if (callback)
                     callback(permOut);
             });
-        return permOut;
+        return Promise.resolve(permOut);
     }
 
     /**
@@ -143,6 +143,6 @@ export class Permissions {
             if (callback)
                 callback(permOut);
         });
-        return permOut;
+        return Promise.resolve(permOut);
     }
 }

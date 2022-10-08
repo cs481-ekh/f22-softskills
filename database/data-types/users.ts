@@ -43,7 +43,7 @@ export class Users {
                 if (callback)
                     callback(userOut);
             });
-        return userOut;
+        return Promise.resolve(userOut);
     }
 
     /**
@@ -66,7 +66,7 @@ export class Users {
             if (callback)
                 callback(user);
         });
-        return user;
+        return Promise.resolve(user);
     }
 
     /**
@@ -89,7 +89,7 @@ export class Users {
                 if (callback)
                     callback(userOut);
             });
-        return userOut;
+        return Promise.resolve(userOut);
     }
 
     /**
@@ -112,6 +112,6 @@ export class Users {
             if (callback)
                 callback(user);
         });
-        return user;
+        return Promise.resolve(user);
     }
 }
