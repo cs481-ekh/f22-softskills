@@ -1,12 +1,11 @@
 import { Pool } from 'pg';
-import { User } from '../drive-permission-manager/types';
+import { User } from '../../drive-permission-manager/src/types';
 
 export class Users {
     private pool: Pool;
 
     constructor(pool: Pool) {
         this.pool = pool;
-        this.initDB();
     }
 
     /**
@@ -16,7 +15,7 @@ export class Users {
      * - EMAIL = String email of user - is also primary key
      * - DISPLAY_NAME = Name of user (not null)
      */
-    private async initDB() {
+    async initTable() {
         await this.pool.query("CREATE TABLE IF NOT EXISTS Users (EMAIL TEXT PRIMARY KEY NOT NULL, "
             + "DISPLAY_NAME TEXT NOT NULL);", err => {
                 if (err)
@@ -114,12 +113,5 @@ export class Users {
                 callback(user, err);
         });
         return user;
-    }
-
-    /**
-     * Closes the pool
-     */
-    close(): void {
-        this.pool.end();
     }
 }

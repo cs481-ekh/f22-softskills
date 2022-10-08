@@ -8,12 +8,14 @@
 		"lint": "eslint ."
 	},
 	"devDependencies": {
+		"@types/pg": "^8.6.5",
 		"eslint": "^8.16.0"
 	},
 	"type": "commonjs",
 	"dependencies": {
 		"@google-cloud/local-auth": "^2.1.0",
 		"ejs": "^3.1.8",
-		"express": "^4.18.1"
+		"express": "^4.18.1",
+		"pg": "^8.8.0"
 	}
 }

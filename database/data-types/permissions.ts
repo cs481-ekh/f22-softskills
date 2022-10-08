@@ -1,13 +1,11 @@
-import { file } from 'googleapis/build/src/apis/file';
 import { Pool } from 'pg';
-import { Permission } from '../drive-permission-manager/types';
+import { Permission } from '../../drive-permission-manager/src/types';
 
 export class Permissions {
     private pool: Pool;
 
     constructor(pool: Pool) {
         this.pool = pool;
-        this.initDB();
     }
 
     /**
@@ -25,7 +23,7 @@ export class Permissions {
      * - PENDING_OWNER = Boolean as to whether the account is a pending owner
      * - GRANTEE_USER = ID of user who has access
      */
-    private async initDB() {
+    async initTable() {
         await this.pool.query("CREATE TABLE IF NOT EXISTS Permissions "
             + "(ID TEXT PRIMARY KEY NOT NULL, EMAIL TEXT, TYPE TEXT NOT NULL, "
             + "ROLE TEXT, EXPIRATION_DATE TEXT, DELETED BOOLEAN NOT NULL, "

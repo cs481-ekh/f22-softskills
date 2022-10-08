@@ -26,5 +26,8 @@
     "google-auth-library": "^8.5.1",
     "googleapis": "^107.0.0",
     "postgres": "^3.2.4"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.6.5"
   }
 }

@@ -1,12 +1,11 @@
 import { Pool } from 'pg';
-import { File, Permission } from '../drive-permission-manager/types';
+import { File, Permission } from '../../drive-permission-manager/src/types';
 
 export class Files {
     private pool: Pool;
 
     constructor(pool: Pool) {
         this.pool = pool;
-        this.initDB();
     }
 
     /**
@@ -23,7 +22,7 @@ export class Files {
      * - OWNERS = Array of IDs of owners of file
      * - PERMISSIONS = Array of IDs of permissions relating to file
      */
-    private async initDB() {
+    async initTable() {
         await this.pool.query("CREATE TABLE IF NOT EXISTS Files (ID TEXT PRIMARY KEY NOT NULL, "
             + "KIND TEXT NOT NULL, NAME TEXT, PARENTS TEXT[], CHILDREN TEXT[], OWNERS TEXT[], "
             + "PERMISSIONS TEXT[]);", err => {

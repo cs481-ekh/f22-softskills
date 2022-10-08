@@ -1,4 +1,4 @@
-import { File, Permission } from '../drive-permission-manager/types';
+import { File, Permission } from '../drive-permission-manager/src/types';
 import { Postgres } from './postgres';
 
 const run = async () => {
@@ -34,6 +34,7 @@ const run = async () => {
     //         });
     //     });
     // });
+    p.close();
     await p.permissions.create({
         id: "id",
         emailAddress: "email",
