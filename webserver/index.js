@@ -3,11 +3,20 @@ const app = express();
 const session = require('express-session');
 const fetch = require('node-fetch');
 
+const api = require("./routes/api");
+const auth = require("./routes/auth");
+const login = require("./routes/login");
+
+
 app.use(session({
   resave: false,
   saveUninitialized: true,
   secret: 'SECRET'
 }));
+
+app.use("/api",api);
+app.use("/auth", auth);
+app.use("/login", login);
 
 app.get('/', function(req, res) {
   res.render('pages/auth');
