@@ -2,3 +2,4 @@ node_modules
 webserver/node_modules
 webserver/build
 .idea
+dist
