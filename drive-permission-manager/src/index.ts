@@ -40,9 +40,8 @@ class DrivePermissionManager implements IDrivePermissionManager {
     constructor(auth: GoogleAuth){
         this.drive = google.drive({version:"v3", auth});
         this.db = new Postgres();
-        this.initDb(); // Will need to check to see if DB need
     }
-    private async initDb(){
+    async initDb(){
         await this.db.initTables(); // Init db
         const fileList: File[] = await this.getFiles(); // Get files from Google Drive
         for(const file of fileList){
