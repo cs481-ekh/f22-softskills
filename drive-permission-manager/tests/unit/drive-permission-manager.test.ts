@@ -1,4 +1,5 @@
 require('dotenv').config();
+import collect from 'collect.js';
 import DrivePermissionManager from '../../src'
 import { GoogleAuth, OAuth2Client } from 'google-auth-library';
 import {File, GranteeType, Permission, User, Role} from '../../src';
@@ -52,5 +53,28 @@ describe.skip('Category getPermissions(email)', () => {
             }
         }
         expect(invalidEmailFound).toBeFalsy();
+    })
+})
+
+
+describe.skip('Category getPermissions(fileId)', () => {
+    let permList: Permission[];
+    beforeAll(async () => {
+        fileList = await dpm.getFiles();
+        permList = await dpm.getPermissions(fileList[0].id);
+    })
+    test('Returns a defined value', async () => {
+        expect(permList).toBeDefined();
+    })
+    test('Contains only permissions corresponding to a given fileId', () =>{
+        let badPermissionFound = false;
+        let expectedPerms = collect(permList);
+        for(const perm of permList){
+            if(!expectedPerms.contains(perm)){
+                badPermissionFound = true;
+                break;
+            }
+        }
+        expect(badPermissionFound).toBeFalsy();
     })
 })

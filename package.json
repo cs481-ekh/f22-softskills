@@ -23,6 +23,7 @@
   "homepage": "https://github.com/cs481-ekh/f22-softskills#readme",
   "dependencies": {
     "@google-cloud/local-auth": "^2.1.1",
+    "collect.js": "^4.34.3",
     "google-auth-library": "^8.5.1",
     "googleapis": "^107.0.0",
     "pg": "^8.8.0",
