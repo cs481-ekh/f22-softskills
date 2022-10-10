@@ -11,10 +11,11 @@ const auth = new google.auth.GoogleAuth({
 });
 let dpm: DrivePermissionManager;
 let fileList: File[];
+beforeAll(async () => {
+    dpm = new DrivePermissionManager(auth);
+})
 describe('Category: getFiles()', () => {
     beforeAll(async () =>{
-        dpm = new DrivePermissionManager(auth);
-        // await dpm.initDb();
         fileList = await dpm.getFiles();
     })
     it('Returns a defined value', async () => {
@@ -31,5 +32,25 @@ describe('Category: getFiles()', () => {
     })
     it('The File objects inside contain a Permission[] of length > 0', () => {
         expect(fileList[0].permissions.length).toBeGreaterThan(0);
+    })
+})
+
+describe.skip('Category getPermissions(email)', () => {
+    let permList: Permission[];
+    beforeAll(async () => {
+        permList = await dpm.getPermissions(process.env.TEST_USER_EMAIL);
+    })
+    test('Returns a defined value', async () => {
+        expect(permList).toBeDefined();
+    })
+    test('Contains only permissions corresponding to a given email', () =>{
+        let invalidEmailFound = false;
+        for(const perm of permList){
+            if(perm.emailAddress != process.env.TEST_USER_EMAIL){
+                invalidEmailFound = true;
+                break;
+            }
+        }
+        expect(invalidEmailFound).toBeFalsy();
     })
 })
