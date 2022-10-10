@@ -3,7 +3,7 @@ const express = require("express");
 let router = express.Router();
 
 router
-  .route("/auth/google'")s
+  .route("/auth/google'")
   .get('/auth/google',
   passport.authenticate('google', { scope : ['profile', 'email', 'https://www.googleapis.com/auth/drive'] }))
   .post((req, res) => {});
