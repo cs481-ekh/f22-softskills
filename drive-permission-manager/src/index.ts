@@ -14,7 +14,7 @@ interface IDrivePermissionManager{
      * @param s File id || Email address
      * @returns [Permission] || []
      */
-    getPermissions(s: string): [Permission]
+    getPermissions(s: string): Promise<Permission[]>
     /**
      * Deletes the permission identified by permissionId from the file
      * identified by fileId.
@@ -103,7 +103,25 @@ class DrivePermissionManager implements IDrivePermissionManager {
         console.log(e);
     }
     };
-    getPermissions: (s: string) => [Permission];
+    async getPermissions(s: string): Promise<Permission[]> {
+      let retVal: Permission[];
+      let files = await this.getFiles();
+      for(const file of files){
+        if(file.id == s){
+          retVal = file.permissions;
+          break;
+        }
+      }
+      return new Promise((resolve, reject) =>{
+        if(retVal && retVal.length){
+          resolve(retVal);
+        }
+        else{
+          reject(`No file with the id '${s}' was found.`);
+        }
+      })
+
+    }
     deletePermission: (fileId: string, permissionId: string) => void;
     addPermission: (file: File, role: Role, type: GranteeType, s?: string) => void;
 }
