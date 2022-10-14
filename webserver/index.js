@@ -3,9 +3,9 @@ const app = express();
 const session = require('express-session');
 const fetch = require('node-fetch');
 
-const api = require("./routes/api");
-const auth = require("./routes/auth");
-const login = require("./routes/login");
+// const api = require("./routes/api");
+// const auth = require("./routes/auth");
+// const login = require("./routes/login");
 
 
 app.use(session({
@@ -14,9 +14,9 @@ app.use(session({
   secret: 'SECRET'
 }));
 
-app.use("/api",api);
-app.use("/auth", auth);
-app.use("/login", login);
+// app.use("/api",api);
+// app.use("/auth", auth);
+// app.use("/login", login);
 
 app.get('/', function(req, res) {
   res.render('pages/auth');
@@ -40,6 +40,7 @@ app.get('/success', async (req, res) => {
 
 });
 app.get('/error', (req, res) => res.send("error logging in"));
+app.get('/land', (req, res) => {res.render('land')});
 
 passport.serializeUser(function(user, cb) {
   cb(null, user);

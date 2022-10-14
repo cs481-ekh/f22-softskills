@@ -1,0 +1,20 @@
+<html>
+<header>
+    <title>DPM</title>
+    <h1>Welcome to Drive Permission Manager</h1>
+</header>
+
+<body>
+    <% for( let index=0; index < array.length; index++ ) { %>
+        <div>
+            <h3></h3>
+            <%= array[index].name %>
+                </h3>
+                <button action=console.log()"GET" href="/getpermissions/<%=array[index].id%>">List permissions</button>
+                <button>Add permission</button>
+                <button>Remove Permission</button>
+        </div>
+        <% } %>
+</body>
+
+</html>
