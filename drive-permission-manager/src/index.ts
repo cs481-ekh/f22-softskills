@@ -31,7 +31,7 @@ interface IDrivePermissionManager{
      * @param type the GranteeType
      * @param s the domain or email address for the domain, user, or group that the permission is for.
      */
-    addPermission(file: File, role: Role, type: GranteeType, s?: string): void
+    addPermission(fileid: string, role: Role, type: GranteeType, s?: string): Promise<string>
 }
 
 class DrivePermissionManager implements IDrivePermissionManager {
@@ -136,7 +136,17 @@ class DrivePermissionManager implements IDrivePermissionManager {
 
     }
     deletePermission: (fileId: string, permissionId: string) => void;
-    addPermission: (file: File, role: Role, type: GranteeType, s?: string) => void;
+    async addPermission(fileId: string, role: Role, type: GranteeType, s?: string): Promise<string>  {
+      let file: File = await this.db.files.read(fileId);
+      if(file){
+        
+      }
+      else{
+        return new Promise((resolve, reject) =>{
+          reject('File not found in database.');
+        })
+      }
+    }
 }
 
 export default DrivePermissionManager;
