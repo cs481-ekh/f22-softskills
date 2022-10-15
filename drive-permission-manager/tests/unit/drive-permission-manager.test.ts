@@ -78,3 +78,14 @@ describe.skip('Category getPermissions(fileId)', () => {
         expect(badPermissionFound).toBeFalsy();
     })
 })
+
+describe('Category: addPermission()', () => {
+    test('Throws error when file not found in DB.', async ()=>{
+        try{
+           await dpm.addPermission('lorem_ipsum', 'reader', 'user', 'jacksonmorton@u.boisestate.edu')    
+        }
+        catch(e){
+            expect(e).toMatch('File not found in database.');
+        }
+    })
+})
