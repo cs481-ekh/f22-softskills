@@ -15,7 +15,7 @@ let fileList: File[];
 beforeAll(async () => {
     dpm = new DrivePermissionManager(auth);
 })
-describe('Category: getFiles()', () => {
+describe.skip('Category: getFiles()', () => {
     beforeAll(async () =>{
         fileList = await dpm.getFiles();
     })
@@ -80,7 +80,17 @@ describe.skip('Category getPermissions(fileId)', () => {
 })
 
 describe('Category: addPermission()', () => {
-    test('Throws error when file not found in DB.', async ()=>{
+    test('Adds a permission for a given email for a given fileId', async() => {
+        try{
+            expect(await dpm.addPermission('1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g', 'reader', 'user', 'jacksonmorton@u.boisestate.edu'))
+            .resolves.toBeDefined();
+        }
+        catch(e){
+            fail(e);
+        }
+
+    })
+    test('Throws error when file not found in DB.', async () => {
         try{
            await dpm.addPermission('lorem_ipsum', 'reader', 'user', 'jacksonmorton@u.boisestate.edu')    
         }
