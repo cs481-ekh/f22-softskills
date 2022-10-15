@@ -137,15 +137,9 @@ class DrivePermissionManager implements IDrivePermissionManager {
     }
     deletePermission: (fileId: string, permissionId: string) => void;
     async addPermission(fileId: string, role: Role, type: GranteeType, s?: string): Promise<string>  {
-      let file: File = await this.db.files.read(fileId);
-      if(file){
-        
-      }
-      else{
-        return new Promise((resolve, reject) =>{
-          reject('File not found in database.');
-        })
-      }
+      return new Promise((resolve, reject) =>{
+        reject('File not found in database.');
+      })
     }
 }
 
