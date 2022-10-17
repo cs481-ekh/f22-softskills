@@ -138,7 +138,7 @@ export class Users {
                     users?.push({
                         emailAddress: row.email,
                         displayName: row.display_name,
-                        photoLink: row.photoLink
+                        photoLink: row.photolink
                     });
                 });
             }

@@ -175,7 +175,8 @@ export class Permissions {
                 res.rows;
                 const users = await this.users.readAll();
                 res.rows.forEach(perm => {
-                    let us = users?.find(u => u.emailAddress == perm.user);
+                    console.log(perm);
+                    let us = users?.find(u => u.emailAddress == perm.grantee_user);
                     if (us)
                         permissions?.push({
                             id: perm.id,
@@ -192,6 +193,42 @@ export class Permissions {
             if (callback)
                 callback(permissions);
         });
+        return Promise.resolve(permissions);
+    }
+
+    /**
+     * Get all permissions which contain the specified email address
+     * 
+     * @param email - Email to search for
+     * @param callback - Callback function to executr
+     * @returns - Array of permissions containing the requested email
+     */
+    async readByEmail(email: string, callback?: Function): Promise<Permission[] | undefined> {
+        let permissions: Permission[] | undefined;
+        await this.pool.query("SELECT * FROM Permissions WHERE EMAIL LIKE '"
+            + email + "';").then(async res => {
+                if (!res)
+                    console.error("Error in permission.readByEmail");
+                else {
+                    permissions = [];
+                    const user = await this.users.read(email);
+                    if (user)
+                        res.rows.forEach(perm => {
+                            permissions?.push({
+                                id: perm.id,
+                                emailAddress: perm.email,
+                                type: perm.type,
+                                role: perm.role,
+                                expirationDate: perm.expiration_date,
+                                deleted: perm.deleted,
+                                pendingOwner: perm.pending_owner,
+                                user: user
+                            });
+                        });
+                }
+                if (callback)
+                    callback(permissions);
+            });
         return Promise.resolve(permissions);
     }
 }
