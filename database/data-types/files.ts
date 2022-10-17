@@ -50,7 +50,7 @@ export class Files {
         await this.pool.query("INSERT INTO Files (ID, KIND, NAME, PARENTS, CHILDREN, OWNERS, "
             + "PERMISSIONS) VALUES ('" + file.id + "', '" + file.kind + "', '" + file.name
             + "', '" + this.arrayToString(file.parents) + "', '" + this.arrayToString(file.children)
-            + "', '" + this.arrayToString(file.owners) + "', '" + this.permArrayToString(file.permissions)
+            + "', '" + this.ownersArrayToString(file.owners) + "', '" + this.permArrayToString(file.permissions)
             + "');").then(res => {
                 if (!res)
                     console.error("Error in files.create");
@@ -111,7 +111,7 @@ export class Files {
         await this.pool.query("UPDATE Files SET ID = '" + file.id + "', KIND = '" + file.kind
             + "', NAME = '" + file.name + "', PARENTS = '" + this.arrayToString(file.parents)
             + "', CHILDREN = '" + this.arrayToString(file.children) + "', OWNERS = '"
-            + this.arrayToString(file.owners) + "', PERMISSIONS = '"
+            + this.ownersArrayToString(file.owners) + "', PERMISSIONS = '"
             + this.permArrayToString(file.permissions) + "' WHERE ID = '" + file.id + "';").then(res => {
                 if (!res)
                     console.error("Error in files.update");
@@ -208,7 +208,7 @@ export class Files {
      * @param arr - Array of strings to convert
      * @returns - Consolidated String
      */
-    private arrayToString(arr: string[] | undefined): string {
+    arrayToString(arr: string[] | undefined): string {
         if (!arr)
             return "";
         let strOut = "{";
@@ -223,11 +223,26 @@ export class Files {
      * @param arr - Array of Permissions to convert
      * @returns - Consolidated String
      */
-    private permArrayToString(arr: Permission[]): string {
+    permArrayToString(arr: Permission[]): string {
         let strOut = "{";
         arr.forEach(perm => strOut += '"' + perm.id + '", ');
         if (strOut.length > 1)
             strOut = strOut.slice(0, strOut.length - 2);
+        return strOut + "}";
+    }
+
+    /**
+     * Converts a given owner array to one string to pass to PostgreSQL
+     * 
+     * @param arr - Array of owners to convert
+     * @returns - Consolidated string
+     */
+    ownersArrayToString(arr: any[] | undefined): string {
+        if (!arr)
+            return "";
+        let strOut = "{";
+        arr.forEach(obj => strOut += '"' + obj.emailAddress + '", ');
+        strOut = strOut.slice(0, strOut.length - 2);
         return strOut + "}";
     }
 }
