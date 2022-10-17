@@ -14,10 +14,11 @@ export class Users {
      * Columns:
      * - EMAIL = String email of user - is also primary key
      * - DISPLAY_NAME = Name of user (not null)
+     * - PHOTOLINK = Link to user's profile photo
      */
     async initTable() {
         await this.pool.query("CREATE TABLE IF NOT EXISTS Users (EMAIL TEXT PRIMARY KEY NOT NULL, "
-            + "DISPLAY_NAME TEXT NOT NULL);").then(res => {
+            + "DISPLAY_NAME TEXT NOT NULL, PHOTOLINK TEXT);").then(res => {
                 if (!res)
                     console.error("Error in users.initTable");
             });
@@ -34,8 +35,8 @@ export class Users {
      */
     async create(user: User, callback?: Function): Promise<User | undefined> {
         let userOut: User | undefined;
-        await this.pool.query("INSERT INTO Users (EMAIL, DISPLAY_NAME) "
-            + "VALUES ('" + user.emailAddress + "', '" + user.displayName + "');").then(res => {
+        await this.pool.query("INSERT INTO Users (EMAIL, DISPLAY_NAME, PHOTOLINK) "
+            + "VALUES ('" + user.emailAddress + "', '" + user.displayName + "', '" + user.photoLink + "');").then(res => {
                 if (!res)
                     console.error("Error in users.create");
                 else
@@ -61,7 +62,8 @@ export class Users {
             else
                 user = {
                     emailAddress: res.rows[0].email,
-                    displayName: res.rows[0].display_name
+                    displayName: res.rows[0].display_name,
+                    photoLink: res.rows[0].photolink
                 };
             if (callback)
                 callback(user);
@@ -80,7 +82,8 @@ export class Users {
     async update(user: User, callback?: Function): Promise<User | undefined> {
         let userOut: User | undefined;
         await this.pool.query("UPDATE Users SET EMAIL = '" + user.emailAddress
-            + "', DISPLAY_NAME = '" + user.displayName + "' WHERE EMAIL ='"
+            + "', DISPLAY_NAME = '" + user.displayName + "', PHOTOLNK - '"
+            + user.photoLink + "' WHERE EMAIL ='"
             + user.emailAddress + "';").then(res => {
                 if (!res)
                     console.error("Error in users.update");
@@ -107,7 +110,8 @@ export class Users {
             else
                 user = {
                     emailAddress: res.rows[0].email,
-                    displayName: res.rows[0].display_name
+                    displayName: res.rows[0].display_name,
+                    photoLink: res.rows[0].photolink
                 };
             if (callback)
                 callback(user);
@@ -129,7 +133,14 @@ export class Users {
             if (!res)
                 console.error("Error in users.readAll");
             else {
-                users = res.rows;
+                users = [];
+                res.rows.forEach(row => {
+                    users?.push({
+                        emailAddress: row.email,
+                        displayName: row.display_name,
+                        photoLink: row.photoLink
+                    });
+                });
             }
             if (callback)
                 callback(users);

@@ -20,6 +20,7 @@ export type Permission = {
 export type User = {
     displayName: string
     emailAddress: string
+    photoLink: string
 }
 export type Role = "owner" | "organizer" | "fileOrganizer" | "writer" | "commenter" | "reader";
 export type GranteeType = "user" | "group" | "domain" | "anyone"
