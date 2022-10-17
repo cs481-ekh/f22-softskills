@@ -114,4 +114,26 @@ export class Users {
         });
         return Promise.resolve(user);
     }
+
+    // ]======ENUMERATED OPERATIONS======[
+
+    /**
+     * Queries the database for an array of all users
+     * 
+     * @param callback - Callback function to be executed
+     * @returns - Array of all users
+     */
+    async readAll(callback?: Function): Promise<User[] | undefined> {
+        let users: User[] | undefined;
+        await this.pool.query("SELECT * FROM Users;").then(async res => {
+            if (!res)
+                console.error("Error in users.readAll");
+            else {
+                users = res.rows;
+            }
+            if (callback)
+                callback(users);
+        });
+        return Promise.resolve(users);
+    }
 }

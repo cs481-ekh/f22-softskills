@@ -55,9 +55,9 @@ export class Permissions {
                     console.error("Error in permissions.create");
                 else
                     permOut = permission;
-                if (callback)
-                    callback(permOut);
             });
+        if (callback)
+            callback(permOut);
         return Promise.resolve(permOut);
     }
 
@@ -155,5 +155,43 @@ export class Permissions {
                 callback(permOut);
         });
         return Promise.resolve(permOut);
+    }
+
+    // ]======ENUMERATED OPERATIONS======[
+
+    /**
+     * Gets an array of all permission entries in the table
+     * 
+     * @param callback - Callback function to run
+     * @returns - Array of all permission entries in the permissions table
+     */
+    async readAll(callback?: Function): Promise<Permission[] | undefined> {
+        let permissions: Permission[] | undefined;
+        await this.pool.query("SELECT * FROM Permissions;").then(async res => {
+            if (!res)
+                console.error("Error in permissions.readAll");
+            else {
+                permissions = [];
+                res.rows;
+                const users = await this.users.readAll();
+                res.rows.forEach(perm => {
+                    let us = users?.find(u => u.emailAddress == perm.user);
+                    if (us)
+                        permissions?.push({
+                            id: perm.id,
+                            emailAddress: perm.email,
+                            type: perm.type,
+                            role: perm.role,
+                            expirationDate: perm.expiration_date,
+                            deleted: perm.deleted,
+                            pendingOwner: perm.pending_owner,
+                            user: us
+                        });
+                });
+            }
+            if (callback)
+                callback(permissions);
+        });
+        return Promise.resolve(permissions);
     }
 }

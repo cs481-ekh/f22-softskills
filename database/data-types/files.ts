@@ -34,6 +34,8 @@ export class Files {
             });
     }
 
+    // ]======BASIC CRUD======[
+
     /**
      * Creates the provided File entry in the database. Returns the
      * File object created in the database, or undefined if query
@@ -89,9 +91,9 @@ export class Files {
                     owners: res.rows[0].owners,
                     permissions: perms
                 };
-                if (callback)
-                    callback(file);
             }
+            if (callback)
+                callback(file);
         });
         return Promise.resolve(file);
     }
@@ -150,12 +152,55 @@ export class Files {
                     owners: res.rows[0].owners,
                     permissions: perms
                 };
-                if (callback)
-                    callback(file);
             }
+            if (callback)
+                callback(file);
         });
         return Promise.resolve(file);
     }
+
+    // ]======ENUMERATED OPERATIONS======[
+
+    /**
+     * Gets an array of all file entries in the table
+     * 
+     * @param callback - Callback function to run
+     * @returns - Array of all file entries in the files table
+     */
+    async readAll(callback?: Function): Promise<File[] | undefined> {
+        let files: File[] | undefined;
+        await this.pool.query("SELECT * FROM Files;").then(async res => {
+            if (!res)
+                console.error("Error in files.readAll");
+            else {
+                files = [];
+                res.rows;
+                const permissions = await this.permissions.readAll();
+                res.rows.forEach(file => {
+                    let permArr: Permission[] = [];
+                    file.permissions.forEach((perm: string) => {
+                        let pe = permissions?.find(p => p.id == perm);
+                        if (pe)
+                            permArr.push(pe);
+                    });
+                    files?.push({
+                        id: file.id,
+                        kind: file.kind,
+                        name: file.name,
+                        parents: file.parents,
+                        children: file.children,
+                        owners: file.owners,
+                        permissions: permArr
+                    });
+                });
+            }
+            if (callback)
+                callback(files);
+        });
+        return Promise.resolve(files);
+    }
+
+    // ]======MISC TOOLS======[
 
     /**
      * Converts a given string array to one string to pass to PostgreSQL
