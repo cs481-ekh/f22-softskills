@@ -81,12 +81,11 @@ passport.use(
 /* GENERAL ROUTE HANDLING */
 
 app.get("/", function (req, res) {
-  res.render("pages/auth");
+  res.render("login");
 });
 
 app.get("/login", (req, res) => {
-  var name = "test";
-  res.render("login", { name });
+  res.render("login",);
 });
 
 app.get(
@@ -169,6 +168,7 @@ app.post("/deletePermission/:fileId/:permissionId", async (req, res) => {
       const permissionList = await client.getPermission(fileId);
       console.log(JSON.stringify(permissionList));
       res.render("index", { array: permissionList || [] });
+      res.send(req.params);
     } catch (e) {
       console.log("ERROR", e);
       res.sendStatus(403);
@@ -180,7 +180,7 @@ app.post("/deletePermission/:fileId/:permissionId", async (req, res) => {
 app.post("/addPermission/:fileId/:Role/:GranteeType/:s", async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
-      const {fileId, Role, GranteeType, s} = req.params;
+      const { fileId, Role, GranteeType, s } = req.params;
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
       await client.addPermission(fileId, Role, GranteeType, s);
