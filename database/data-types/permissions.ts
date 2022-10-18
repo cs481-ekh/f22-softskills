@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { Permission } from '../../drive-permission-manager/src/types';
+import { Permission, User } from '../../drive-permission-manager/src/types';
 import { Users } from './users';
 
 export class Permissions {
@@ -158,6 +158,50 @@ export class Permissions {
     }
 
     // ]======ENUMERATED OPERATIONS======[
+
+    /**
+     * Stores the given array of Permission objects in the database, as well as
+     * the nested User objects.
+     * 
+     * @param permissions - Array of permissions to store
+     * @param callback - Callback function to execute
+     * @returns - Array of permissions stored if successful, or undefined otherwise
+     */
+    async populateTable(permissions: Permission[], callback?: Function): Promise<Permission[] | undefined> {
+        if (permissions && permissions.length == 0) {
+            if (callback)
+                callback(undefined);
+            return Promise.resolve(undefined);
+        }
+        let permissionsOut: Permission[] | undefined;
+        let query = "INSERT INTO Permissions (ID, EMAIL, TYPE, ROLE, EXPIRATION_DATE, "
+            + "DELETED, PENDING_OWNER, GRANTEE_USER) VALUES ";
+        let users: User[] = [];
+        permissions.forEach(permission => {
+            query += "('" + permission.id + "', '" + permission.emailAddress + "', '"
+                + permission.type + "', '" + permission.role + "', '" + permission.expirationDate
+                + "', '" + permission.deleted + "', '" + permission.pendingOwner
+                + "', '" + permission.user.emailAddress + "'), ";
+            if (!users.some(u => u.emailAddress == permission.user.emailAddress))
+                users.push(permission.user);
+        });
+        query = query.slice(0, query.length - 2) + ";";
+        await this.pool.query(query).then(async res => {
+            if (!res)
+                console.error("Error in permissions.populateTable");
+            else {
+                await this.users.populateTable(users).then(res => {
+                    if (!res)
+                        console.error("Error in Permissions.populateTable");
+                    else
+                        permissionsOut = permissions;
+                });
+            }
+            if (callback)
+                callback(permissionsOut);
+        });
+        return Promise.resolve(permissionsOut);
+    }
 
     /**
      * Gets an array of all permission entries in the table

@@ -50,7 +50,7 @@ export class Files {
         await this.pool.query("INSERT INTO Files (ID, KIND, NAME, PARENTS, CHILDREN, OWNERS, "
             + "PERMISSIONS) VALUES ('" + file.id + "', '" + file.kind + "', '" + file.name
             + "', '" + this.arrayToString(file.parents) + "', '" + this.arrayToString(file.children)
-            + "', '" + this.ownersArrayToString(file.owners) + "', '" + this.permArrayToString(file.permissions)
+            + "', '" + this.arrayToString(file.owners) + "', '" + this.permArrayToString(file.permissions)
             + "');").then(res => {
                 if (!res)
                     console.error("Error in files.create");
@@ -111,7 +111,7 @@ export class Files {
         await this.pool.query("UPDATE Files SET ID = '" + file.id + "', KIND = '" + file.kind
             + "', NAME = '" + file.name + "', PARENTS = '" + this.arrayToString(file.parents)
             + "', CHILDREN = '" + this.arrayToString(file.children) + "', OWNERS = '"
-            + this.ownersArrayToString(file.owners) + "', PERMISSIONS = '"
+            + this.arrayToString(file.owners) + "', PERMISSIONS = '"
             + this.permArrayToString(file.permissions) + "' WHERE ID = '" + file.id + "';").then(res => {
                 if (!res)
                     console.error("Error in files.update");
@@ -162,6 +162,53 @@ export class Files {
     // ]======ENUMERATED OPERATIONS======[
 
     /**
+     * Stores the given array of File objects in the database, as well as the nested
+     * Permission and User objects.
+     * 
+     * @param files - Array of files to store
+     * @param callback - Callback function to execute
+     * @returns - Array of files stored if successful, or undefined otherwise
+     */
+    async populateTable(files: File[], callback?: Function): Promise<File[] | undefined> {
+        if (files && files.length == 0) {
+            if (callback)
+                callback(undefined);
+            return Promise.resolve(undefined);
+        }
+        let filesOut = files;
+        let query = "INSERT INTO Files (ID, KIND, NAME, PARENTS, CHILDREN, OWNERS, PERMISSIONS) VALUES ";
+        let permissions: Permission[] = [];
+        files.forEach(file => {
+            query += "('" + file.id + "', '" + file.kind + "', '" + file.name
+                + "', '" + this.arrayToString(file.parents) + "', '" + this.arrayToString(file.children)
+                + "', '" + this.ownersArrayToString(file.owners) + "', '" + this.permArrayToString(file.permissions)
+                + "'), ";
+            file.permissions.forEach(permission => {
+                if (!permissions.some(p => p.id == permission.id))
+                    permissions.push(permission);
+            });
+        });
+        query = query.slice(0, query.length - 2) + ";";
+        await this.pool.query(query).then(async res => {
+            if (!res)
+                console.error("Error in Files.populateTable");
+            else {
+                await this.permissions.populateTable(permissions).then(res => {
+                    if (!res)
+                        console.error("Error in Files.populateTable");
+                    else {
+                        // TODO: need to populate user table from file.owners?
+                        filesOut = files;
+                    }
+                });
+            }
+            if (callback)
+                callback(files);
+        });
+        return Promise.resolve(filesOut);
+    }
+
+    /**
      * Gets an array of all file entries in the table
      * 
      * @param callback - Callback function to run
@@ -208,9 +255,9 @@ export class Files {
      * @param arr - Array of strings to convert
      * @returns - Consolidated String
      */
-    arrayToString(arr: string[] | undefined): string {
+    private arrayToString(arr: string[] | undefined): string {
         if (!arr)
-            return "";
+            return "{}";
         let strOut = "{";
         arr.forEach(str => strOut += '"' + str + '", ');
         strOut = strOut.slice(0, strOut.length - 2);
@@ -223,7 +270,7 @@ export class Files {
      * @param arr - Array of Permissions to convert
      * @returns - Consolidated String
      */
-    permArrayToString(arr: Permission[]): string {
+    private permArrayToString(arr: Permission[]): string {
         let strOut = "{";
         arr.forEach(perm => strOut += '"' + perm.id + '", ');
         if (strOut.length > 1)
@@ -239,9 +286,14 @@ export class Files {
      */
     ownersArrayToString(arr: any[] | undefined): string {
         if (!arr)
-            return "";
+            return "{}";
         let strOut = "{";
-        arr.forEach(obj => strOut += '"' + obj.emailAddress + '", ');
+        arr.forEach(obj => {
+            if (typeof obj == 'string')
+                strOut += '"' + obj + '", ';
+            else
+                strOut += '"' + obj.emailAddress + '", ';
+        });
         strOut = strOut.slice(0, strOut.length - 2);
         return strOut + "}";
     }

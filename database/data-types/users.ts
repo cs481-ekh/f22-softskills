@@ -122,6 +122,36 @@ export class Users {
     // ]======ENUMERATED OPERATIONS======[
 
     /**
+     * Stores the given array of User objects in the database.
+     * 
+     * @param users - Array of users to store
+     * @param callback - Callback function to execute
+     * @returns - Array of users stored if successful, or undefined otherwise
+     */
+    async populateTable(users: User[], callback?: Function): Promise<User[] | undefined> {
+        if (users && users.length == 0) {
+            if (callback)
+                callback(undefined);
+            return Promise.resolve(undefined);
+        }
+        let usersOut: User[] | undefined;
+        let query = "INSERT INTO Users (EMAIL, DISPLAY_NAME, PHOTOLINK) VALUES ";
+        users.forEach(user => {
+            query += "('" + user.emailAddress + "', '" + user.displayName + "', '" + user.photoLink + "'), ";
+        });
+        query = query.slice(0, query.length - 2) + ";";
+        await this.pool.query(query).then(res => {
+            if (!res)
+                console.error("Error in Users.populateTable");
+            else
+                usersOut = users;
+            if (callback)
+                callback(usersOut);
+        });
+        return usersOut;
+    }
+
+    /**
      * Queries the database for an array of all users
      * 
      * @param callback - Callback function to be executed
