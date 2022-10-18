@@ -210,7 +210,7 @@ export class Files {
      */
     arrayToString(arr: string[] | undefined): string {
         if (!arr)
-            return "";
+            return "{}";
         let strOut = "{";
         arr.forEach(str => strOut += '"' + str + '", ');
         strOut = strOut.slice(0, strOut.length - 2);
@@ -239,7 +239,7 @@ export class Files {
      */
     ownersArrayToString(arr: any[] | undefined): string {
         if (!arr)
-            return "";
+            return "{}";
         let strOut = "{";
         arr.forEach(obj => strOut += '"' + obj.emailAddress + '", ');
         strOut = strOut.slice(0, strOut.length - 2);
