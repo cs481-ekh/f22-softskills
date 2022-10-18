@@ -250,7 +250,7 @@ export class Files {
     // ]======MISC TOOLS======[
 
     /**
-     * Converts a given string array to one string to pass to PostgreSQL
+     * Converts a given string array to one string to be passed to PostgreSQL
      * 
      * @param arr - Array of strings to convert
      * @returns - Consolidated String
