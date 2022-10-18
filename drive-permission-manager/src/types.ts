@@ -9,7 +9,6 @@ export type File =  {
 }
 export type Permission = {
     id: string
-    emailAddress: string
     type: GranteeType | string
     role: Role | string
     expirationDate?: string | number
