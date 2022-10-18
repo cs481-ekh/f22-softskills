@@ -48,7 +48,7 @@ export class Permissions {
         await this.pool.query("INSERT INTO Permissions (ID, TYPE, ROLE, EXPIRATION_DATE, "
             + "DELETED, PENDING_OWNER, GRANTEE_USER) VALUES ('" + permission.id + "', '" + permission.type
             + "', '" + permission.role + "', '" + permission.expirationDate + "', '" + permission.deleted + "', '"
-            + permission.pendingOwner + "', '" + permission.user.emailAddress + "');").then(res => {
+            + permission.pendingOwner + "', '" + permission.user.emailAddress + "') ON CONFLICT (ID) DO NOTHING;").then(res => {
                 if (!res)
                     console.error("Error in permissions.create");
                 else
@@ -181,7 +181,7 @@ export class Permissions {
             if (!users.some(u => u.emailAddress == permission.user.emailAddress))
                 users.push(permission.user);
         });
-        query = query.slice(0, query.length - 2) + ";";
+        query = query.slice(0, query.length - 2) + " ON CONFLICT(ID) DO NOTHING;";
         await this.pool.query(query).then(async res => {
             if (!res)
                 console.error("Error in permissions.populateTable");

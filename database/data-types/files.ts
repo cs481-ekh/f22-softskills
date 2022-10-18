@@ -51,7 +51,7 @@ export class Files {
             + "PERMISSIONS) VALUES ('" + file.id + "', '" + file.kind + "', '" + file.name
             + "', '" + this.arrayToString(file.parents) + "', '" + this.arrayToString(file.children)
             + "', '" + this.arrayToString(file.owners) + "', '" + this.permArrayToString(file.permissions)
-            + "');").then(res => {
+            + "') ON CONFLICT(ID) DO NOTHING;").then(res => {
                 if (!res)
                     console.error("Error in files.create");
                 else
@@ -188,7 +188,7 @@ export class Files {
                     permissions.push(permission);
             });
         });
-        query = query.slice(0, query.length - 2) + ";";
+        query = query.slice(0, query.length - 2) + " ON CONFLICT (ID) DO NOTHING;";
         await this.pool.query(query).then(async res => {
             if (!res)
                 console.error("Error in Files.populateTable");

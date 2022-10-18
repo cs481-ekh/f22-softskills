@@ -36,7 +36,7 @@ export class Users {
     async create(user: User, callback?: Function): Promise<User | undefined> {
         let userOut: User | undefined;
         await this.pool.query("INSERT INTO Users (EMAIL, DISPLAY_NAME, PHOTOLINK) "
-            + "VALUES ('" + user.emailAddress + "', '" + user.displayName + "', '" + user.photoLink + "');").then(res => {
+            + "VALUES ('" + user.emailAddress + "', '" + user.displayName + "', '" + user.photoLink + "') ON CONFLICT(EMAIL) DO NOTHING;").then(res => {
                 if (!res)
                     console.error("Error in users.create");
                 else
@@ -139,7 +139,7 @@ export class Users {
         users.forEach(user => {
             query += "('" + user.emailAddress + "', '" + user.displayName + "', '" + user.photoLink + "'), ";
         });
-        query = query.slice(0, query.length - 2) + ";";
+        query = query.slice(0, query.length - 2) + " ON CONFLICT (EMAIL) DO NOTHING;";
         await this.pool.query(query).then(res => {
             if (!res)
                 console.error("Error in Users.populateTable");
