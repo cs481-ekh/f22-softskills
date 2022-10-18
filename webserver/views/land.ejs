@@ -1,7 +1,8 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <meta charset="utf-8">
 <header>
+    
     <h1>Welcome to Drive Permission Manager</h1>
 </header>
 
@@ -9,11 +10,49 @@
     <% for( let index=0; index < array.length; index++ ) { %>
         <div>
             <h3></h3>
-            <button type="button"> <%= array[index].name %> </button>
+            
+            <button type="button">
+                <%=array[index].name %>
+            </button>
         </div>
         <% } %>
+
+ 
 </body>
 
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+
+<Header>
+    <h1>Welcome to Drive Permission Manager</h1>
+</Header>
+
+<body>
+
+    
+   <%
+   const arr = JSON.stringify(array);
+   const files = JSON.parse(arr);
+    
+   let children = [];
+   files.forEach((file) => {
+    children = [...children, ...(file.children || [])];
+    });
+
+    const parentNodes = files.filter((file) => {
+        const result = !children.includes(file.id);
+        return result;
+    });
+    console.log(parentNodes);
+   %>
+
+
+</body>
+
+
+
 </html>
-
-
