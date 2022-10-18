@@ -158,14 +158,15 @@ app.get("/getPermissions", async (req, res) => {
   } else res.redirect("/success");
 });
 
-// getPermissions
-app.get("/deletePermission", async (req, res) => {
+// deletePermissions
+app.post("/deletePermission/:fileId/:permissionId", async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
+      const { fileId, permissionId } = req.params;
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
       await client.deletePermission(fileId, permissionId);
-      const permissionList = await client.getPermission(s);
+      const permissionList = await client.getPermission(fileId);
       console.log(JSON.stringify(permissionList));
       res.render("index", { array: permissionList || [] });
     } catch (e) {
@@ -176,13 +177,14 @@ app.get("/deletePermission", async (req, res) => {
 });
 
 // addPermissions
-app.get("/addPermission", async (req, res) => {
+app.post("/addPermission/:fileId/:Role/:GranteeType/:s", async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
+      const {fileId, Role, GranteeType, s} = req.params;
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
       await client.addPermission(fileId, Role, GranteeType, s);
-      const permissionList = await client.getPermission(s);
+      const permissionList = await client.getPermission(fileId);
       console.log(JSON.stringify(permissionList));
       res.render("index", { array: permissionList || [] });
     } catch (e) {
