@@ -21,7 +21,7 @@ interface IDrivePermissionManager{
      * @param fileId the id of the file to remove the permission from
      * @param permissionId the id of the permission to remove
      */
-    deletePermission(fileId: string, permissionId: string): void
+    deletePermission(fileId: string, permissionId: string): Promise<void>
     /**
      * Adds a permission to the given File. If the GranteeType is user or group, then
      * an email address will need to be passed. If the GranteeType is domain, then a
@@ -135,7 +135,40 @@ class DrivePermissionManager implements IDrivePermissionManager {
       })
 
     }
-    deletePermission: (fileId: string, permissionId: string) => void;
+    
+    async deletePermission(fileId: string, permissionId: string): Promise<void> {
+      try{
+        let file: File = await this.db.files.read(fileId);
+        // Check file
+        if(!file){
+          return new Promise((resolve, reject) => {
+            reject({
+              fileId,
+              permissionId,
+              reason: `File not found.` 
+            })
+          })
+        }
+        let perm: Permission = await this.db.permissions.read(permissionId);
+        // Check permission
+        if(!perm){
+          return new Promise((resolve, reject) => {
+            reject({
+              fileId,
+              permissionId,
+              reason: `Permission not found.` 
+            })
+          })
+        }
+      }
+      catch(e){
+        console.log(e);
+        return new Promise((resolve, reject) => {
+          reject('Failed to delete permission');
+        })
+      }
+    }
+  
     async addPermission(fileId: string, role: Role, type: GranteeType, s?: string): Promise<Permission>  {
       // Check email/domain (s)
       if(s.indexOf('@') < 0) {
