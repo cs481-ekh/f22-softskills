@@ -98,4 +98,8 @@ describe('Category: addPermission()', () => {
             expect(e).toMatch('File not found in database.');
         }
     })
+    test('Rejects email strings that do not contain @ in them.', async () => {
+        expect(await dpm.addPermission('1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g', 'reader', 'user', 'lorem_ipsum'))
+        .rejects.toBe("Invalid email. Failed to find '@' character.");
+    })
 })
