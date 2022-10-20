@@ -5,3 +5,6 @@ webserver/build
 dist
 bsu-cs481-team-softskills-49209df60247.json
 .env
+req.http
+webserver/package-lock.json
+
