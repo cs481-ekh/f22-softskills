@@ -30,8 +30,9 @@ interface IDrivePermissionManager{
      * @param role the role that should be granted by this permission
      * @param type the GranteeType
      * @param s the domain or email address for the domain, user, or group that the permission is for.
+     * @returns the Permission created
      */
-    addPermission(fileid: string, role: Role, type: GranteeType, s?: string): Promise<string>
+    addPermission(fileid: string, role: Role, type: GranteeType, s?: string): Promise<Permission>
 }
 
 class DrivePermissionManager implements IDrivePermissionManager {
@@ -70,10 +71,9 @@ class DrivePermissionManager implements IDrivePermissionManager {
           res.data.files.forEach((f) => {
             const permissionsList = [];
             for(const perm of f.permissions){
-              let user: User = {emailAddress: perm.emailAddress, displayName: perm.displayName};
+              let user: User = {emailAddress: perm.emailAddress, displayName: perm.displayName, photoLink: perm.photoLink};
               let permission: Permission = {
                 id: perm.id,
-                emailAddress: perm.emailAddress,
                 type: perm.type,
                 role: perm.role,
                 expirationDate: perm.expirationTime,
@@ -136,10 +136,56 @@ class DrivePermissionManager implements IDrivePermissionManager {
 
     }
     deletePermission: (fileId: string, permissionId: string) => void;
-    async addPermission(fileId: string, role: Role, type: GranteeType, s?: string): Promise<string>  {
-      return new Promise((resolve, reject) =>{
-        reject('File not found in database.');
-      })
+    async addPermission(fileId: string, role: Role, type: GranteeType, s?: string): Promise<Permission>  {
+      // Check email/domain (s)
+      if(s.indexOf('@') < 0) {
+        return new Promise((resolve, reject) => {
+          reject({
+            fileId,
+            role,
+            granteeType: s,
+            email: s,
+            reason: "Invalid email format."
+          })
+        })
+      }
+      // Check Role
+      else if(!["owner", "organizer", "fileOrganizer", "writer", "commenter", "reader"].includes(role)){
+        return new Promise((resolve, reject) =>{
+          reject({
+            fileId,
+            role,
+            granteeType: s,
+            email: s,
+            reason: "Invalid role was provided."
+          })
+        })
+      }
+      // Check GranteeType
+      else if(!["user", "group", "domain", "anyone"].includes(type)){
+        return new Promise((resolve, reject) =>{
+          reject({
+            fileId,
+            role,
+            granteeType: s,
+            email: s,
+            reason: "Invalid role was provided."
+          })
+        })
+      }
+      // Check fileId
+      let file: File = await this.db.files.read(fileId);
+      if(!file){
+        return new Promise((resolve, reject) =>{
+          reject({
+            fileId,
+            role,
+            granteeType: s,
+            email: s,
+            reason: "File not found in database."
+          })
+        })
+      }
     }
 }
 
