@@ -135,7 +135,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
       })
 
     }
-    
+
     async deletePermission(fileId: string, permissionId: string): Promise<void> {
       try{
         let file: File = await this.db.files.read(fileId);
@@ -160,11 +160,20 @@ class DrivePermissionManager implements IDrivePermissionManager {
             })
           })
         }
+        // Attempt to make call to Drive api to delete the permission
+        const params = {
+          fileId,
+          permissionId
+        }
+        await this.drive.permissions.delete(params);
       }
-      catch(e){
-        console.log(e);
+      catch(e){ // Something went wrong with api call to drive...inform user
         return new Promise((resolve, reject) => {
-          reject('Failed to delete permission');
+          reject({
+            fileId,
+            permissionId,
+            reason: `Something went wrong with Google Drive API call:\n${e}` 
+          })
         })
       }
     }
