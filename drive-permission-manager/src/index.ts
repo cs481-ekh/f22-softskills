@@ -186,6 +186,56 @@ class DrivePermissionManager implements IDrivePermissionManager {
           })
         })
       }
+      // Parameters passed. Lets try and make the Permission....
+      const params = { // create params for google drive api req
+        fileId,
+        fields: "*",
+        requestBody: {
+          role,
+          type,
+          emailAddress: s
+        }
+      }
+      try{
+        const res = await this.drive.permissions.create(params); // make request to drive api
+        let permission: Permission = { // create new Permission object if request was successful
+          id: res.data.id,
+          type: res.data.type,
+          role: res.data.role,
+          deleted: res.data.deleted,
+          pendingOwner: res.data.pendingOwner,
+          user: {displayName: res.data.displayName, emailAddress: res.data.emailAddress, photoLink: res.data.photoLink}
+        }
+        try{ // try to add the newly created permission to our db
+          await this.db.permissions.create(permission);
+          return new Promise((resolve, reject) => {
+            // permission was created without any problem and both db and drive were updated without throwing errors
+            resolve(permission)
+          })
+        }
+        catch(e){ // failed to update our db but Drive may have been updated
+          return new Promise((resolve, reject) => {
+            reject({
+              fileId,
+              role,
+              granteeType: s,
+              email: s,
+              reason: "There was a problem updating our db. Its possible that permission was still created in Drive."
+            })
+          })
+        }
+      }
+      catch(e){ // API call to Drive went wrong
+        return new Promise((resolve, reject) => {
+          reject({
+            fileId,
+            role,
+            granteeType: s,
+            email: s,
+            reason: `Drive API request failed or was rejected:\n${e}` 
+          })
+        })
+      }
     }
 }
 
