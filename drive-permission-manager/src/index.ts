@@ -166,6 +166,18 @@ class DrivePermissionManager implements IDrivePermissionManager {
           permissionId
         }
         await this.drive.permissions.delete(params);
+        try{
+          await this.db.permissions.delete(permissionId); // update our db to reflect change
+        }
+        catch(e){ // something bad happened when trying to update our db... :(
+          return new Promise((resolve, reject) => { 
+            reject({
+              fileId,
+              permissionId,
+              reason: `Failed to update db.`
+            })
+          })
+        }
       }
       catch(e){ // Something went wrong with api call to drive...inform user
         return new Promise((resolve, reject) => {
