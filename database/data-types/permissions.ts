@@ -27,7 +27,7 @@ export class Permissions {
      */
     async initTable() {
         await this.pool.query("CREATE TABLE IF NOT EXISTS Permissions "
-            + "(ID TEXT PRIMARY KEY NOT NULL, TYPE TEXT NOT NULL, "
+            + "(ID TEXT PRIMARY KEY NOT NULL, FILEID TEXT NOT NULL, TYPE TEXT NOT NULL, "
             + "ROLE TEXT, EXPIRATION_DATE TEXT, DELETED BOOLEAN NOT NULL, "
             + "PENDING_OWNER BOOLEAN, GRANTEE_USER TEXT NOT NULL);").then(res => {
                 if (!res)
@@ -36,6 +36,7 @@ export class Permissions {
     }
 
     /**
+     * NOTE: DO NOT USE - use Files.createPermission instead
      * Creates the provided permission entry in the database. Returns the created
      * permission object, or undefined if query was unsuccessful.
      * 
@@ -45,14 +46,19 @@ export class Permissions {
      */
     async create(permission: Permission, callback?: Function): Promise<Permission | undefined> {
         let permOut: Permission | undefined;
-        await this.pool.query("INSERT INTO Permissions (ID, TYPE, ROLE, EXPIRATION_DATE, "
-            + "DELETED, PENDING_OWNER, GRANTEE_USER) VALUES ('" + permission.id + "', '" + permission.type
-            + "', '" + permission.role + "', '" + permission.expirationDate + "', '" + permission.deleted + "', '"
-            + permission.pendingOwner + "', '" + permission.user.emailAddress + "') ON CONFLICT (ID) DO NOTHING;").then(res => {
+        await this.pool.query("INSERT INTO Permissions (ID, FILEID, TYPE, ROLE, EXPIRATION_DATE, "
+            + "DELETED, PENDING_OWNER, GRANTEE_USER) VALUES ('" + permission.id + "', '" + permission.fileId
+            + "', '" + permission.type + "', '" + permission.role + "', '" + permission.expirationDate + "', '"
+            + permission.deleted + "', '" + permission.pendingOwner + "', '" + permission.user.emailAddress
+            + "') ON CONFLICT (ID) DO NOTHING;").then(async res => {
                 if (!res)
                     console.error("Error in permissions.create");
                 else
-                    permOut = permission;
+                    await this.users.create(permission.user).then(res => {
+                        if (!res)
+                            console.error("Error in permissions.create user section");
+                        permOut = permission;
+                    });
             });
         if (callback)
             callback(permOut);
@@ -71,13 +77,14 @@ export class Permissions {
         let permOut: Permission | undefined;
         await this.pool.query("SELECT * FROM Permissions WHERE ID LIKE '"
             + id + "';").then(async res => {
-                if (!res)
+                if (!res || !res.rows || res.rows.length == 0)
                     console.error("Error in permissions.read");
                 else {
                     let user = await this.users.read(res.rows[0].grantee_user);
                     if (user)
                         permOut = {
                             id: res.rows[0].id,
+                            fileId: res.rows[0].fileid,
                             type: res.rows[0].type,
                             role: res.rows[0].role,
                             expirationDate: res.rows[0].expiration_date,
@@ -95,6 +102,7 @@ export class Permissions {
     }
 
     /**
+     * NOTE: If updating fileId, please delete permission object and create a new one
      * Updates the given permission object in the database. Returns the updated object,
      * or undefined if query is unsuccessful.
      * 
@@ -104,15 +112,20 @@ export class Permissions {
      */
     async update(permission: Permission, callback?: Function): Promise<Permission | undefined> {
         let permOut: Permission | undefined;
-        await this.pool.query("UPDATE Permissions SET ID = '" + permission.id + "', TYPE = '"
+        await this.pool.query("UPDATE Permissions SET ID = '" + permission.id
+            + "', FILEID = '" + permission.fileId + "', TYPE = '"
             + permission.type + "', ROLE = '" + permission.role + "', EXPIRATION_DATE = '"
             + permission.expirationDate + "', DELETED = '" + permission.deleted + "', PENDING_OWNER = '"
             + permission.pendingOwner + "', GRANTEE_USER = '" + permission.user.emailAddress
-            + "' WHERE ID = '" + permission.id + "';").then(res => {
+            + "' WHERE ID = '" + permission.id + "';").then(async res => {
                 if (!res)
                     console.error("Error in permissions.update");
                 else
-                    permOut = permission;
+                    await this.users.update(permission.user).then(res => {
+                        if (!res)
+                            console.error("Error in permissions.update updating user");
+                        permOut = permission;
+                    });
                 if (callback)
                     callback(permOut);
             });
@@ -120,6 +133,7 @@ export class Permissions {
     }
 
     /**
+     * NOTE: DO NOT USE - use Files.deletePermission instead
      * Deletes the specified permission. Returns the deleted permission object,
      * or undefined if the query was unsuccessful.
      * 
@@ -130,22 +144,26 @@ export class Permissions {
     async delete(id: string, callback?: Function): Promise<Permission | undefined> {
         let permOut: Permission | undefined;
         await this.pool.query("DELETE FROM Permissions WHERE ID LIKE '" + id + "' RETURNING *;").then(async res => {
-            if (!res)
+            if (!res || !res.rows || res.rows.length == 0)
                 console.error("Error in permissions.delete");
             else {
                 let user = await this.users.read(res.rows[0].grantee_user);
-                if (user)
-                    permOut = {
-                        id: res.rows[0].id,
-                        type: res.rows[0].type,
-                        role: res.rows[0].role,
-                        expirationDate: res.rows[0].expiration_date,
-                        deleted: res.rows[0].deleted,
-                        pendingOwner: res.rows[0].pending_owner,
-                        user: user
+                if (!user)
+                    user = {
+                        displayName: "",
+                        emailAddress: res.rows[0].grantee_user,
+                        photoLink: ""
                     };
-                else
-                    console.error("Error in permissions.read");
+                permOut = {
+                    id: res.rows[0].id,
+                    fileId: res.rows[0].fileid,
+                    type: res.rows[0].type,
+                    role: res.rows[0].role,
+                    expirationDate: res.rows[0].expiration_date,
+                    deleted: res.rows[0].deleted,
+                    pendingOwner: res.rows[0].pending_owner,
+                    user: user
+                };
             }
             if (callback)
                 callback(permOut);
@@ -170,12 +188,13 @@ export class Permissions {
             return Promise.resolve(undefined);
         }
         let permissionsOut: Permission[] | undefined;
-        let query = "INSERT INTO Permissions (ID, TYPE, ROLE, EXPIRATION_DATE, "
+        let query = "INSERT INTO Permissions (ID, FILEID, TYPE, ROLE, EXPIRATION_DATE, "
             + "DELETED, PENDING_OWNER, GRANTEE_USER) VALUES ";
         let users: User[] = [];
         permissions.forEach(permission => {
-            query += "('" + permission.id + "', '" + permission.type + "', '"
-                + permission.role + "', '" + permission.expirationDate
+            query += "('" + permission.id + "', '" + permission.fileId
+                + "', '" + permission.type + "', '" + permission.role
+                + "', '" + permission.expirationDate
                 + "', '" + permission.deleted + "', '" + permission.pendingOwner
                 + "', '" + permission.user.emailAddress + "'), ";
             if (!users.some(u => u.emailAddress == permission.user.emailAddress))
@@ -206,20 +225,19 @@ export class Permissions {
      * @returns - Array of all permission entries in the permissions table
      */
     async readAll(callback?: Function): Promise<Permission[] | undefined> {
-        let permissions: Permission[] | undefined;
+        let permissions: Permission[] | undefined = [];
         await this.pool.query("SELECT * FROM Permissions;").then(async res => {
-            if (!res)
+            if (!res || !res.rows)
                 console.error("Error in permissions.readAll");
             else {
-                permissions = [];
                 res.rows;
                 const users = await this.users.readAll();
                 res.rows.forEach(perm => {
-                    console.log(perm);
                     let us = users?.find(u => u.emailAddress == perm.grantee_user);
                     if (us)
                         permissions?.push({
                             id: perm.id,
+                            fileId: perm.fileid,
                             type: perm.type,
                             role: perm.role,
                             expirationDate: perm.expiration_date,
@@ -255,6 +273,7 @@ export class Permissions {
                         res.rows.forEach(perm => {
                             permissions?.push({
                                 id: perm.id,
+                                fileId: perm.fileid,
                                 type: perm.type,
                                 role: perm.role,
                                 expirationDate: perm.expiration_date,

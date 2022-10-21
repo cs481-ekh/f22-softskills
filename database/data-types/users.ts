@@ -57,7 +57,7 @@ export class Users {
     async read(email: String, callback?: Function): Promise<User | undefined> {
         let user: User | undefined;
         await this.pool.query("SELECT * FROM Users WHERE EMAIL LIKE '" + email + "';").then(res => {
-            if (!res)
+            if (!res || !res.rows || res.rows.length == 0)
                 console.error("Error in users.read");
             else
                 user = {
@@ -82,7 +82,7 @@ export class Users {
     async update(user: User, callback?: Function): Promise<User | undefined> {
         let userOut: User | undefined;
         await this.pool.query("UPDATE Users SET EMAIL = '" + user.emailAddress
-            + "', DISPLAY_NAME = '" + user.displayName + "', PHOTOLNK - '"
+            + "', DISPLAY_NAME = '" + user.displayName + "', PHOTOLINK = '"
             + user.photoLink + "' WHERE EMAIL ='"
             + user.emailAddress + "';").then(res => {
                 if (!res)
@@ -96,7 +96,10 @@ export class Users {
     }
 
     /**
-     * Deletes the desired user from the database and returns the correscponding User object
+     * Deletes the desired user from the database and returns the corresponding User object.
+     * 
+     * It is not a good idea to delete user objects, as they are referenced frequently by
+     * Permission and File objects.
      * 
      * @param email - Email of user to be deleted
      * @param callback - Callback function to execute after
@@ -105,7 +108,7 @@ export class Users {
     async delete(email: String, callback?: Function): Promise<User | undefined> {
         let user: User | undefined;
         await this.pool.query("DELETE FROM Users WHERE EMAIL LIKE '" + email + "' RETURNING *;").then(res => {
-            if (!res)
+            if (!res || !res.rows || res.rows.length == 0)
                 console.error("Error in users.delete");
             else
                 user = {
@@ -158,12 +161,11 @@ export class Users {
      * @returns - Array of all users
      */
     async readAll(callback?: Function): Promise<User[] | undefined> {
-        let users: User[] | undefined;
+        let users: User[] | undefined = [];
         await this.pool.query("SELECT * FROM Users;").then(async res => {
-            if (!res)
+            if (!res || !res.rows)
                 console.error("Error in users.readAll");
             else {
-                users = [];
                 res.rows.forEach(row => {
                     users?.push({
                         emailAddress: row.email,
