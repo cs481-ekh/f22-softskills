@@ -1,14 +1,15 @@
-export type File =  {
+export type File = {
     id: string;
     kind: string;
     name: string;
     parents: string[];
     children?: string[];
-    owners: any[];
+    owners: User[];
     permissions: Permission[];
 }
 export type Permission = {
     id: string
+    fileId: string
     type: GranteeType | string
     role: Role | string
     expirationDate?: string | number
@@ -23,5 +24,3 @@ export type User = {
 }
 export type Role = "owner" | "organizer" | "fileOrganizer" | "writer" | "commenter" | "reader";
 export type GranteeType = "user" | "group" | "domain" | "anyone"
-
-

@@ -23,7 +23,7 @@ export class Postgres {
         });
         this.users = new Users(this.pool);
         this.permissions = new Permissions(this.pool, this.users);
-        this.files = new Files(this.pool, this.permissions);
+        this.files = new Files(this.pool, this.permissions, this.users);
     }
 
     /**
