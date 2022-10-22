@@ -2,8 +2,8 @@ export type File = {
     id: string;
     kind: string;
     name: string;
-    parents: string[];
-    children?: string[];
+    parents?: string[];
+    children: File[] | string[];
     owners: User[];
     permissions: Permission[];
 }
