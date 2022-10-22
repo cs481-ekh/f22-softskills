@@ -50,14 +50,28 @@ export class Files {
      */
     async create(file: File, callback?: Function): Promise<File | undefined> {
         let fileOut: File | undefined;
-        await this.pool.query("INSERT INTO Files (ID, KIND, NAME, PARENTS, CHILDREN, OWNERS, "
-            + "PERMISSIONS) VALUES ('" + file.id + "', '" + file.kind + "', '" + file.name
-            + "', '" + this.arrayToString(file.parents) + "', '" + this.arrayToString(file.children)
-            + "', '" + this.ownersArrayToString(file.owners) + "', '" + this.permArrayToString(file.permissions)
-            + "') ON CONFLICT(ID) DO NOTHING;").then(res => {
+        await this.pool.query("INSERT INTO Files (ID, KIND, NAME, " + ((file.parents) ? "PARENTS, " : "") + "CHILDREN, OWNERS, "
+            + "PERMISSIONS) VALUES ('" + file.id + "', '" + file.kind + "', '" + file.name + "', '" +
+            ((file.parents) ? this.arrayToString(file.parents) + "', '" : "") +
+            this.fileArrayToString(file.children) + "', '" + this.ownersArrayToString(file.owners)
+            + "', '" + this.permArrayToString(file.permissions)
+            + "') ON CONFLICT(ID) DO NOTHING;").then(async res => {
                 if (!res)
                     console.error("Error in files.create");
                 else {
+                    if (file.parents && file.parents[0]) {
+                        const parent: File | undefined = await this.read(file.parents[0]);
+                        if (parent) {
+                            parent.children[parent.children.length] = file.id;
+                            await this.update(parent);
+                        }
+                    }
+                    if (file.children && file.children[0]) {
+                        file.children.forEach(async child => {
+                            if (typeof child != "string")
+                                await this.create(child)
+                        });
+                    }
                     file.permissions.forEach(async permission => {
                         await this.permissions.create(permission).then(res => {
                             if (!res)
@@ -125,8 +139,8 @@ export class Files {
     async update(file: File, callback?: Function): Promise<File | undefined> {
         let fileOut: File | undefined;
         await this.pool.query("UPDATE Files SET ID = '" + file.id + "', KIND = '" + file.kind
-            + "', NAME = '" + file.name + "', PARENTS = '" + this.arrayToString(file.parents)
-            + "', CHILDREN = '" + this.arrayToString(file.children) + "', OWNERS = '"
+            + "', NAME = '" + file.name + ((file.parents) ? "', PARENTS = '" + this.arrayToString(file.parents)
+                : "") + "', CHILDREN = '" + this.fileArrayToString(file.children) + "', OWNERS = '"
             + this.ownersArrayToString(file.owners) + "', PERMISSIONS = '"
             + this.permArrayToString(file.permissions) + "' WHERE ID = '" + file.id + "';").then(res => {
                 if (!res)
@@ -194,8 +208,8 @@ export class Files {
     }
 
     /**
-     * Deletes the specified file. Returns the deleted file object, or undefined
-     * if the query was unsuccessful.
+     * Deletes the specified file and its children. Returns
+     * the deleted file object, or undefined if the query was unsuccessful.
      * 
      * @param id - ID of file to delete
      * @param callback - Callback function to run
@@ -210,8 +224,10 @@ export class Files {
                 let perms: Permission[] = [];
                 for (let i = 0; i < res.rows.length; i++) {
                     let temp = await this.permissions.read(res.rows[0].permissions[i]);
-                    if (temp)
+                    if (temp) {
                         perms.push(temp);
+                        await this.permissions.delete(temp.id);
+                    }
                 }
                 let owners: User[] = [];
                 for (let i = 0; i < res.rows[0].owners.length; i++) {
@@ -219,6 +235,9 @@ export class Files {
                     if (temp)
                         owners.push(temp);
                 }
+                res.rows[0].children.forEach(async (child: string) => {
+                    await this.delete(child);
+                });
                 file = {
                     id: res.rows[0].id,
                     kind: res.rows[0].kind,
@@ -257,7 +276,7 @@ export class Files {
         let owners: User[] = [];
         files.forEach(file => {
             query += "('" + file.id + "', '" + file.kind + "', '" + file.name
-                + "', '" + this.arrayToString(file.parents) + "', '" + this.arrayToString(file.children)
+                + "', '" + this.arrayToString(file.parents ? file.parents : undefined) + "', '" + this.fileArrayToString(file.children)
                 + "', '" + this.ownersArrayToString(file.owners) + "', '" + this.permArrayToString(file.permissions)
                 + "'), ";
             file.permissions.forEach(permission => {
@@ -296,9 +315,10 @@ export class Files {
      * Gets an array of all file entries in the table
      * 
      * @param callback - Callback function to run
+     * @param treeStructure - Whether to return files in tree structure or not
      * @returns - Array of all file entries in the files table
      */
-    async readAll(callback?: Function): Promise<File[] | undefined> {
+    async readAll(treeStructure?: boolean, callback?: Function): Promise<File[] | undefined> {
         let files: File[] | undefined = [];
         await this.pool.query("SELECT * FROM Files;").then(async res => {
             if (!res || !res.rows)
@@ -329,6 +349,8 @@ export class Files {
                         permissions: permArr
                     });
                 });
+                if (files && files.length > 0 && treeStructure)
+                    files = this.restructureFiles(files);
             }
             if (callback)
                 callback(files);
@@ -339,13 +361,55 @@ export class Files {
     // ]======MISC TOOLS======[
 
     /**
+     * Given a 1-dimensional array of File objects, returns an 'n'-dimensional
+     * array, representative of the tree as the files are stored in Google Drive
+     * 
+     * @param filesIn - Array of File objects to restructure
+     * @returns - Array of restructured File objects
+     */
+    private restructureFiles(filesIn: File[]): File[] {
+        let filesOut: File[] = [];
+        if (!filesIn || filesIn.length == 0)
+            return filesOut;
+        // sort files by parent
+        const mapByParent: Map<string, File[]> = new Map();
+        filesIn.forEach(file => {
+            let parent = !file.parents || file.parents.length == 0 ? "" : file.parents[0];
+            if (mapByParent.has(parent))
+                mapByParent.get(parent)?.push(file);
+            else
+                mapByParent.set(parent, [file]);
+        });
+        filesOut = this.sort(mapByParent, "");
+        return filesOut;
+    }
+
+    /**
+     * Recursive function called by restructureFiles to sort File objects by
+     * their parent File, and return a sub-array of restructured Files
+     * 
+     * @param map - Map containing pairings of parent id to child File object
+     * @param parent - Id of the parent file for the current iteration
+     * @returns - Sub-array of restructured File objects
+     */
+    private sort(map: Map<string, File[]>, parent: string): File[] {
+        let children: File[] | undefined = map.get(parent);
+        if (!children)
+            return [];
+        children.forEach(child => {
+            child.children = this.sort(map, child.id);
+        });
+        return children;
+    }
+
+    /**
      * Converts a given string array to one string to pass to PostgreSQL
      * 
      * @param arr - Array of strings to convert
      * @returns - Consolidated String
      */
     private arrayToString(arr: string[] | undefined): string {
-        if (!arr)
+        if (!arr || arr.length == 0)
             return "{}";
         let strOut = "{";
         arr.forEach(str => strOut += '"' + str + '", ');
@@ -368,13 +432,32 @@ export class Files {
     }
 
     /**
+     * Converts a given File array to one string to pass to PostgreSQL
+     * 
+     * @param arr - Array of Files to convert
+     * @returns - Consolidated String
+     */
+    private fileArrayToString(arr: File[] | string[]): string {
+        let strOut = "{";
+        arr.forEach(file => {
+            if (typeof file == "string")
+                strOut += '"' + file + '", ';
+            else
+                strOut += '"' + file.id + '", ';
+        });
+        if (strOut.length > 1)
+            strOut = strOut.slice(0, strOut.length - 2);
+        return strOut + "}";
+    }
+
+    /**
      * Converts a given owner array to one string to pass to PostgreSQL
      * 
      * @param arr - Array of owners to convert
      * @returns - Consolidated string
      */
     ownersArrayToString(arr: any[] | undefined): string {
-        if (!arr)
+        if (!arr || arr.length == 0)
             return "{}";
         let strOut = "{";
         arr.forEach(obj => {
