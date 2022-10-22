@@ -7,6 +7,12 @@
 </Header>
 <body>
 
+    <script>
+        const files = JSON.parse('<%- JSON.stringify(array)%>');
+        console.log(files);
+    </script>
+    
+
     <%
     
     const arr = JSON.stringify(array);
@@ -16,13 +22,13 @@
     files.forEach((file) => {
         children = [...children, ...(file.children || [])];
     });
-    // console.log(children);
+    console.log(children);
 
     const parentNodes = files.filter((file) => {
         const result = !children.includes(file.id);
         return result;
     });
-    // console.log(parentNodes);
+    console.log(parentNodes);
 
     parentNodes.forEach((parent) => {
         
