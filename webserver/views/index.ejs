@@ -93,21 +93,27 @@
             for( let index=0; index < files.length; index++ ) {
               var r = '<p>' + '<h1>' + _.get(files[index], 'name') + '</h1>' + '</p>'
               //var x = '<p class ="owner">' + 'Owner: ' + _.get(files[index], 'owners.0.displayName') +'</p>'
-              //  x = x + '<p>' + 'Email Address: ' + _.get(files[index], 'owners.0.emailAddress') +'</p>'
-              //   x = x + '<p>' + 'Role: ' + _.get(files[index], 'permissions.0.role') + '</p>'
+              //x = x + '<p>' + 'Email Address: ' + _.get(files[index], 'owners.0.emailAddress') +'</p>'
+              //x = x + '<p>' + 'Role: ' + _.get(files[index], 'permissions.0.role') + '</p>'
               var x = '<br>' + ' ' + '</br>'
               var z = _.get(files[index], 'permissions')
 
+              var t = [];
               for(let index2=0; index2 < z.length;index2++) {
-               var q = '<div class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" id="menu1" data-toggle="dropdown">' + _.get(z[index2],'1', 'user.displayName') + '<span class="caret"></span></button>'
+                if(_.get(z[index2], 'user.displayName') !== "drive-permission-manager@driver-permission-manager.iam.gserviceaccount.com")
+                {
+               var q = '<div class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" id="menu1" data-toggle="dropdown">' + _.get(z[index2], 'user.displayName') + '<span class="caret"></span></button>'
                q = q + '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">'
                q = q + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(z[index2],'user.emailAddress') + '</a></li>'
                q = q + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>ROLE: </b>' +  _.get(z[index2], 'role') +'</a></li>'
                q = q + '<li role="presentation" class="divider"></li>'
                q = q + '<li role="presentation" ><a role="menuitem" tabindex="-1" href="https://www.youtube.com/watch?v=p7YXXieghto" >' + '<b>REMOVE ACCESS</b>' + '</a></li>' 
                q = q + '</ul>' + '</div>'
+               t = t + q;
+                }
+        
               }
-                document.getElementById('list').innerHTML = '<div>' + document.getElementById('list').innerHTML + ' ' + r + '<h2>Who has access</h2>' + q + x + '</div>';
+                document.getElementById('list').innerHTML = '<div>' + document.getElementById('list').innerHTML + ' ' + r + '<h2>Who has access</h2>' + t + x + '</div>';
             }
             </script>
 
