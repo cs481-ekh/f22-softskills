@@ -1,17 +1,120 @@
-
 <html>
-    <header>
-        <title>DPM</title>
-        <h1>Welcome to Drive Permission Manager</h1>
-    </header>
-    <body>
-        <% for( let index = 0; index < array.length; index++ ) { %>
+
+<head>
+    <title>DPM</title>
+    <h1>Welcome to Drive Permission Manager</h1>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+<style>
+    .enum-pane {
+
+        border-style: double;
+        border-color: black;
+        float: left;
+
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: auto;
+        margin-bottom: auto;
+
+        width: 60%;
+
+
+    }
+
+    .preview-pane {
+    
+        float: right;
+
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: auto;
+        margin-bottom: auto;
+
+        padding: 10px 10px 10px 10px;
+
+        box-shadow: 4px 10px 5px 0px rgba(0, 0, 0, 0.75);
+        font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+        color: whitesmoke;
+        text-indent: 5%;
+        background-color: teal;
+        width: 33.33%;
+
+    }
+
+    .access-top{
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: auto;
+        margin-bottom: auto;
+
+        background-color: silver;
+        text-indent: 5%;
+        color: whitesmoke;
+    }
+
+    .owner{
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: auto;
+        margin-bottom: auto;
+
+        background-color: salmon;
+        text-indent: 5%;
+        color: whitesmoke;
+    }
+
+
+
+</style>
+
+<body>
+    <div class="enum-pane">
+        <% for( let index=0; index < array.length; index++ ) { %>
             <div>
-                <h3></h3><%= array[index].name %> </h3>
-                <button action= console.log()"GET" href="/getpermissions/<%=array[index].id%>">List permissions</button>
-                <button>Add permission</button>
-                <button>Remove Permission</button>
+                <h3></h3>
+                <%= array[index].name %>
+                    </h3>
+                    <button>List permissions</button>
+                    <button>Add permission</button>
+                    <button>Remove Permission</button>
             </div>
             <% } %>
-    </body>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    <div class="preview-pane">
+        <p id='list'></p>
+        <script type="text/JavaScript">
+            const files = JSON.parse('<%- JSON.stringify(array)%>');
+
+            for( let index=0; index < files.length; index++ ) {
+              var r = '<p>' + '<h1>' + _.get(files[index], 'name') + '</h1>' + '</p>'
+              //var x = '<p class ="owner">' + 'Owner: ' + _.get(files[index], 'owners.0.displayName') +'</p>'
+              //  x = x + '<p>' + 'Email Address: ' + _.get(files[index], 'owners.0.emailAddress') +'</p>'
+              //   x = x + '<p>' + 'Role: ' + _.get(files[index], 'permissions.0.role') + '</p>'
+              var x = '<br>' + ' ' + '</br>'
+              var z = _.get(files[index], 'permissions')
+
+              for(let index2=0; index2 < z.length;index2++) {
+               var q = '<div class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" id="menu1" data-toggle="dropdown">' + _.get(z[index2],'1', 'user.displayName') + '<span class="caret"></span></button>'
+               q = q + '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">'
+               q = q + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(z[index2],'user.emailAddress') + '</a></li>'
+               q = q + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>ROLE: </b>' +  _.get(z[index2], 'role') +'</a></li>'
+               q = q + '<li role="presentation" class="divider"></li>'
+               q = q + '<li role="presentation" ><a role="menuitem" tabindex="-1" href="https://www.youtube.com/watch?v=p7YXXieghto" >' + '<b>REMOVE ACCESS</b>' + '</a></li>' 
+               q = q + '</ul>' + '</div>'
+              }
+                document.getElementById('list').innerHTML = '<div>' + document.getElementById('list').innerHTML + ' ' + r + '<h2>Who has access</h2>' + q + x + '</div>';
+            }
+            </script>
+
+
+
+    </div>
+</body>
+
+
 </html>
