@@ -3,15 +3,13 @@ const app = express();
 const session = require('express-session');
 const fetch = require('node-fetch');
 
+const json = require('./output.json'); // For custom styles
+
+app.use(express.static("public"));
+
 // const api = require("./routes/api");
 // const auth = require("./routes/auth");
 // const login = require("./routes/login");
-
-const json = require('./output.json');
-
-
-
-
 
 app.use(session({
   resave: false,

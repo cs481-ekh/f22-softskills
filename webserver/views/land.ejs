@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
         integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/style.css">
     <title>DPM</title>
 </head>
-
 
 <div class="jumbotron text-center">
     <Header>
@@ -17,32 +17,78 @@
 </div>
 
 <body>
+    <div class="btn-group m-1">
+        <button class="btn btn-outline-dark">Show Permissions</button>
+        <button class="btn btn-outline-dark">Add Permissions</button>
+        <button class="btn btn-outline-dark">Remove Permission</button>
+    </div>
 
-    <div class="btn-group-vertical" id='container'></div>
+    <div id='box'></div>
 
     <script>
         const files = JSON.parse('<%- JSON.stringify(array)%>');
-        let children = [];
-        files.forEach((file) => {
-            children = [...children, ...(file.children || [])];
-            // console.log(file);
-        });
-        const parentNodes = files.filter((file) => {
-            const result = !children.includes(file.id);
-            return result;
-        });
-        // console.log(parentNodes);
-        const container = document.getElementById('container');
-        parentNodes.forEach((parent) => {
+        // Create an array of all the files/folders that are children of another folder
+        const children = files.reduce((children, curr) => {
+            return [...children, ...(curr.children || [])];
+        }, []);
+        // These are the root buttons because they are not children
+        const rootParents = files.filter((file) => !children.includes(file.id));
+
+        const onClickHandler = (event) => {
+            // Stop click event from propagating up the DOM tree and clicking other buttons
+            event.stopPropagation();
+
+            // Select the button's parent (button container) and all its children nodes
+            const fileId = event.target.parentNode.id;
+            const buttonContainer = document.getElementById(fileId);
+            const containerNodes = buttonContainer.children;
+
+            if (containerNodes && Array.from(containerNodes).length > 1) {
+                // Button container has child nodes besides the button/folder itself, so "close" the folder
+
+                // Iterate through each child and remove the child from the button container
+                Array.from(containerNodes).forEach((node, index) => {
+                    // Do nothing to the first child, since this is the folder/button itself
+                    if (index === 0) return;
+                    buttonContainer.removeChild(node);
+                });
+            } else {
+                // Button container does not have other children besides the button/folder itself, so "open" the folder
+
+                // Find the file from the parsed JSON and append a button for each child to the button container
+                const file = files.find((file) => file.id === fileId);
+                (file.children || []).forEach((childId) => {
+                    const childFile = files.find((file) => file.id === childId);
+                    const childButton = createButton(childFile, ['child']);
+                    buttonContainer.appendChild(childButton);
+                });
+            }
+        }
+
+        // Creates a new button element and applies class names to the button container
+        const createButton = (file, classNames = []) => {
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = classNames.join(' ');
+            // This id is used to find where children will be appended in onClickHandler
+            buttonContainer.id = file.id;
+
             const button = document.createElement('button');
-            button.className = "btn btn-primary";
-            button.innerText = parent.name;
-            container.appendChild(button);
+            button.className = 'button';
+            button.textContent = file.name;
+
+            // Listen and wait to call onClickHandler when button is clicked
+            button.addEventListener('click', onClickHandler);
+            buttonContainer.appendChild(button);
+            return buttonContainer;
+        }
+
+        // Add the root parent folders to the root container to start
+        const box = document.getElementById('box');
+        rootParents.forEach((parent) => {
+            box.appendChild(createButton(parent, ['parent']));
         });
+
     </script>
-
 </body>
-
-
 
 </html>
