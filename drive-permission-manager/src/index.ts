@@ -268,7 +268,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
           role,
           granteeType: s,
           email: s,
-          reason: "Invalid role was provided.",
+          reason: "Invalid granteeType was provided.",
         });
       });
     }

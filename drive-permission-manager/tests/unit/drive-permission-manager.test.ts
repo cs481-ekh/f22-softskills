@@ -108,6 +108,24 @@ describe('Category: addPermission()', () => {
             expect(e.reason).toMatch('File not found in database.');
         }
     })
+    test('Spec 3 TC1: Throws error when provided an invalid role.', async () => {
+        try{
+            // @ts-expect-error
+            await dpm.addPermission('1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g', 'wizard', 'user', 'jacksonmorton@u.boisestate.edu')
+        }
+        catch(e){
+            expect(e.reason).toBe("Invalid role was provided.")
+        }
+    })
+    test('Spec 4 TC1: Throws error when provided an invalid GranteeType.', async () => {
+        try{
+            // @ts-expect-error
+            await dpm.addPermission('1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g', 'reader', 'mlg_quick_scope_clan', 'jacksonmorton@u.boisestate.edu')
+        }
+        catch(e){
+            expect(e.reason).toBe("Invalid granteeType was provided.")
+        }
+    })
     test('Spec 5 TC1: Rejects email strings that do not contain @ in them.', async () => {
         try{
             await dpm.addPermission('1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g', 'reader', 'user', 'lorem_ipsum')
