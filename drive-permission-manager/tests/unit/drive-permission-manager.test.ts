@@ -48,16 +48,19 @@ describe('Category: getFiles()', () => {
 ////////// getPermissions(email)
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-describe.skip('Category: getPermissions(email)', () => {
+describe('Category: getPermissions(email)', () => {
     let permList: Permission[];
     beforeAll(async () => {
-        permList = await dpm.getPermissions(process.env.TEST_USER_EMAIL);
+        permList = await dpm.getPermissions({emailAddress:process.env.TEST_USER_EMAIL});
     })
     test('Spec 1 TC1: Returns a defined value', async () => {
         expect(permList).toBeDefined();
     })
     test('Spec 1 TC2: Contains only permissions corresponding to a given email', () =>{
         expect(permList.find(perm => perm.user.emailAddress != process.env.TEST_USER_EMAIL)).toBeUndefined();
+    })
+    test('Spec 1 TC3: Returns an array of length > 0', () => {
+        expect(permList.length).toBeGreaterThan(0);
     })
 })
 //////////////////////////////////////////////////////////////////////////////////
@@ -68,7 +71,7 @@ describe.skip('Category: getPermissions(email)', () => {
 describe('Category: getPermissions(fileId)', () => {
     let permList: Permission[];
     beforeAll(async () => {
-        permList = await dpm.getPermissions(fileList[0].id);
+        permList = await dpm.getPermissions({fileId:fileList[0].id});
     })
     test('Spec 1 TC1: Returns a defined value', async () => {
         expect(permList).toBeDefined();
@@ -89,7 +92,7 @@ describe('Category: addPermission()', () => {
             if(res){
                 validPerm = res;
             }
-            let updatedPermList = await dpm.getPermissions('1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g');
+            let updatedPermList = await dpm.getPermissions({fileId:'1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g'})
             expect(updatedPermList.find(perm => perm.id == res.id)).toBeDefined();
         }
         catch(e){
@@ -123,7 +126,7 @@ describe('Category: deletePermission()', () => {
     test('Spec 1 TC1: Deletes a permission when given a valid fileId and associated permissionId', async() => {
         try{
             await dpm.deletePermission("1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g", validPerm.id);
-            let updatedPermList = await dpm.getPermissions('1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g');
+            let updatedPermList = await dpm.getPermissions({fileId:'1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g'});
             expect(updatedPermList.find(perm => perm.id == validPerm.id)).toBeUndefined();
         }
         catch(e){

@@ -24,3 +24,4 @@ export type User = {
 }
 export type Role = "owner" | "organizer" | "fileOrganizer" | "writer" | "commenter" | "reader";
 export type GranteeType = "user" | "group" | "domain" | "anyone"
+export type GetPermissionsOptions = {fileId: string} | {emailAddress: string}

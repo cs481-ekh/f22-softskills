@@ -1,5 +1,5 @@
 import { GoogleAuth, OAuth2Client } from "google-auth-library";
-import { File, GranteeType, Permission, User, Role } from "./types";
+import { File, GranteeType, Permission, User, Role, GetPermissionsOptions } from "./types";
 import { drive_v3, google } from "googleapis";
 import { Postgres } from "../../database/postgres";
 interface IDrivePermissionManager {
@@ -11,10 +11,10 @@ interface IDrivePermissionManager {
   /**
    * Returns an [] containing the permissions of a given fileId
    * or the permissions associated with an email address.
-   * @param s File id || Email address
+   * @param s GetPermissionOptions || Email address
    * @returns [Permission] || []
    */
-  getPermissions(s: string): Promise<Permission[]>;
+  getPermissions(s: GetPermissionsOptions): Promise<Permission[]>;
   /**
    * Deletes the permission identified by permissionId from the file
    * identified by fileId.
@@ -146,24 +146,31 @@ class DrivePermissionManager implements IDrivePermissionManager {
       console.log(e);
     }
   }
-  async getPermissions(s: string): Promise<Permission[]> {
-    let retVal: Permission[];
-    let files = await this.getFiles();
-    for (const file of files) {
-      if (file.id == s) {
-        retVal = file.permissions;
-        break;
+  async getPermissions(s: GetPermissionsOptions): Promise<Permission[]> {
+    // By File Id
+    if("fileId" in s){
+      try{
+        let file = await this.db.files.read(s.fileId);
+        if(file) return Promise.resolve(file.permissions);
+        else return Promise.reject({...s, reason: "File not found."})
+      }
+      catch(e){
+        return Promise.reject({...s, reason: `Error when querying db...\n${e}`})
       }
     }
-    return new Promise((resolve, reject) => {
-      if (retVal && retVal.length) {
-        resolve(retVal);
-      } else {
-        reject(`No file with the id '${s}' was found.`);
+    // By Email Address
+    else if("emailAddress" in s){
+      try{
+        return Promise.resolve(await this.db.permissions.readByEmail(s.emailAddress))
       }
-    });
+      catch(e){
+        return Promise.reject({...s, reason: `Error when querying db...\n${e}`})
+      }
+    }
+    else{
+      return Promise.reject({reason: `Invalid parameters provided ${s}`});
+    }
   }
-
   async deletePermission(fileId: string, permissionId: string): Promise<void> {
     try {
       let file: File = await this.db.files.read(fileId);
