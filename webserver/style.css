@@ -1,0 +1,92 @@
+body {
+    background: #FFFFFF;
+    padding: 10px 10px 10px 10px;
+    height: 100vh;
+    justify-content: left;
+    align-items: center;
+    width: 100%;
+}
+
+.button {
+    min-width: 100%;
+    min-height: 40px;
+    width: 60%;
+    color: #000000;
+    background-color: #7ECDFA;
+    border: none;
+    border-radius: 6px;
+    box-shadow: #5DA7DE 0px 50px 100px -20px, #5DA7DE 0px 30px 60px -30px, #5DA7DE 0px -2px 6px 0px inset;
+    text-align: left;
+    font-family: 'product_sansregular', sans-serif;
+    font-size: 23px;
+}
+
+.button:hover {
+    cursor: pointer;
+    background-color: #94d3f7;
+}
+
+.boxDiv {
+    align-items: left;
+    width: 100%;
+    border-style: double;
+}
+
+.parent {
+    margin: 5px;
+    width: 60%;
+}
+
+.child {
+    margin: 5px 5px 5px 30px;
+    width: 100%;
+
+}
+
+.enum-pane {
+    border-style: double;
+    border-color: black;
+    float: left;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    width: 66.66%;
+}
+
+.preview-pane {
+    float: right;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    border-style: double;
+    text-align: center;
+    font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+    color: black;
+    background-color: white;
+    width: 33.33%;
+}
+
+.access-top {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    background-color: silver;
+    text-align: left;
+    color: black;
+    border-style: double;
+    font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+    font-weight: lighter;
+}
+
+.owner {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+    background-color: salmon;
+    text-indent: 5%;
+    color: whitesmoke;
+}
