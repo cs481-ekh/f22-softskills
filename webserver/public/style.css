@@ -1,0 +1,99 @@
+body {
+    background: #FFFFFF;
+    padding: 0px 24px;
+    height: 100vh;
+    justify-content: left;
+    align-items: center;
+    width: 100%;
+}
+
+.button {
+    min-width: 100%;
+    min-height: 40px;
+    width: 60%;
+    color: #000000;
+    background-color: #7ECDFA;
+    border: none;
+    border-radius: 6px;
+    box-shadow: #5DA7DE 0px 50px 100px -20px, #5DA7DE 0px 30px 60px -30px, #5DA7DE 0px -2px 6px 0px inset;
+    text-align: left;
+    font-family: 'product_sansregular', sans-serif;
+    font-size: 23px;
+}
+
+.button:hover {
+    cursor: pointer;
+    background-color: #94d3f7;
+}
+
+.boxDiv {
+    align-items: left;
+    width: 100%;
+}
+
+.parent {
+    margin: 5px;
+    width: 67%;
+}
+
+.child {
+    margin: 5px 5px 5px 30px;
+}
+
+.enum-pane {
+
+    border-style: double;
+    border-color: black;
+    float: left;
+
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+
+    width: 60%;
+
+
+}
+
+.preview-pane {
+
+    float: right;
+
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+
+    padding: 10px 10px 10px 10px;
+
+    box-shadow: 4px 10px 5px 0px rgba(0, 0, 0, 0.75);
+    font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+    color: whitesmoke;
+    text-indent: 5%;
+    background-color: teal;
+    width: 33.33%;
+
+}
+
+.access-top{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+
+    background-color: silver;
+    text-indent: 5%;
+    color: whitesmoke;
+}
+
+.owner{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+    margin-bottom: auto;
+
+    background-color: salmon;
+    text-indent: 5%;
+    color: whitesmoke;
+}
