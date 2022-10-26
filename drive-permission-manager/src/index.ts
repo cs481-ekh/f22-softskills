@@ -74,23 +74,25 @@ class DrivePermissionManager implements IDrivePermissionManager {
         res.data.files.forEach((f) => {
           // Parse permissions of the file
           const permissionsList = [];
-          for (const perm of f.permissions) {
-            let user: User = {
-              emailAddress: perm.emailAddress,
-              displayName: perm.displayName,
-              photoLink: perm.photoLink,
-            };
-            let permission: Permission = {
-              id: perm.id,
-              fileId: f.id,
-              type: perm.type,
-              role: perm.role,
-              expirationDate: perm.expirationTime,
-              deleted: perm.deleted,
-              pendingOwner: perm.pendingOwner,
-              user,
-            };
-            permissionsList.push(permission);
+          if (f.permissions) {
+            for (const perm of f.permissions) {
+              let user: User = {
+                emailAddress: perm.emailAddress,
+                displayName: perm.displayName,
+                photoLink: perm.photoLink,
+              };
+              let permission: Permission = {
+                id: perm.id,
+                fileId: f.id,
+                type: perm.type,
+                role: perm.role,
+                expirationDate: perm.expirationTime,
+                deleted: perm.deleted,
+                pendingOwner: perm.pendingOwner,
+                user,
+              };
+              permissionsList.push(permission);
+            }
           }
           // Parse owners of the file
           let owners: User[] = [];
@@ -148,27 +150,27 @@ class DrivePermissionManager implements IDrivePermissionManager {
   }
   async getPermissions(s: GetPermissionsOptions): Promise<Permission[]> {
     // By File Id
-    if("fileId" in s){
-      try{
+    if ("fileId" in s) {
+      try {
         let file = await this.db.files.read(s.fileId);
-        if(file) return Promise.resolve(file.permissions);
-        else return Promise.reject({...s, reason: "File not found."})
+        if (file) return Promise.resolve(file.permissions);
+        else return Promise.reject({ ...s, reason: "File not found." })
       }
-      catch(e){
-        return Promise.reject({...s, reason: `Error when querying db...\n${e}`})
+      catch (e) {
+        return Promise.reject({ ...s, reason: `Error when querying db...\n${e}` })
       }
     }
     // By Email Address
-    else if("emailAddress" in s){
-      try{
+    else if ("emailAddress" in s) {
+      try {
         return Promise.resolve(await this.db.permissions.readByEmail(s.emailAddress))
       }
-      catch(e){
-        return Promise.reject({...s, reason: `Error when querying db...\n${e}`})
+      catch (e) {
+        return Promise.reject({ ...s, reason: `Error when querying db...\n${e}` })
       }
     }
-    else{
-      return Promise.reject({reason: `Invalid parameters provided ${s}`});
+    else {
+      return Promise.reject({ reason: `Invalid parameters provided ${s}` });
     }
   }
   async deletePermission(fileId: string, permissionId: string): Promise<void> {
