@@ -12,90 +12,179 @@ const auth = new google.auth.GoogleAuth({
 });
 let dpm: DrivePermissionManager;
 let fileList: File[];
+let validPerm: Permission;
+
 beforeAll(async () => {
     dpm = new DrivePermissionManager(auth);
+    await dpm.initDb();
 })
-describe.skip('Category: getFiles()', () => {
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+////////// getFiles()
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+describe('Category: getFiles()', () => {
     beforeAll(async () =>{
         fileList = await dpm.getFiles();
     })
-    it('Returns a defined value', async () => {
+    it('Spec 1 TC1: Returns a defined value', async () => {
         expect(fileList).toBeDefined();
     })
-    it('Has length > 0', () => {
+    it('Spec 1 TC2: Has length > 0', () => {
         expect(fileList.length).toBeGreaterThan(0);
     })
-    it('Contains File objects', () => {
+    it('Spec 1 TC3: Contains File objects', () => {
         expect(fileList[0].id).toBeDefined();
     })
-    it('The File objects inside contain a Permission[]', () => {
+    it('Spec 1 TC4: The File objects inside contain a Permission[]', () => {
         expect(fileList[0].permissions).toBeDefined();
     })
-    it('The File objects inside contain a Permission[] of length > 0', () => {
+    it('Spec 1 TC5: The File objects inside contain a Permission[] of length > 0', () => {
         expect(fileList[0].permissions.length).toBeGreaterThan(0);
     })
 })
-
-describe.skip('Category getPermissions(email)', () => {
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+////////// getPermissions(email)
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+describe('Category: getPermissions(email)', () => {
     let permList: Permission[];
     beforeAll(async () => {
-        permList = await dpm.getPermissions(process.env.TEST_USER_EMAIL);
+        permList = await dpm.getPermissions({emailAddress:process.env.TEST_USER_EMAIL});
     })
-    test('Returns a defined value', async () => {
+    test('Spec 1 TC1: Returns a defined value', async () => {
         expect(permList).toBeDefined();
     })
-    test('Contains only permissions corresponding to a given email', () =>{
-        let invalidEmailFound = false;
-        for(const perm of permList){
-            if(perm.emailAddress != process.env.TEST_USER_EMAIL){
-                invalidEmailFound = true;
-                break;
-            }
-        }
-        expect(invalidEmailFound).toBeFalsy();
+    test('Spec 1 TC2: Contains only permissions corresponding to a given email', () =>{
+        expect(permList.find(perm => perm.user.emailAddress != process.env.TEST_USER_EMAIL)).toBeUndefined();
+    })
+    test('Spec 1 TC3: Returns an array of length > 0', () => {
+        expect(permList.length).toBeGreaterThan(0);
     })
 })
-
-
-describe.skip('Category getPermissions(fileId)', () => {
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+////////// getPermissions(fileId)
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+describe('Category: getPermissions(fileId)', () => {
     let permList: Permission[];
     beforeAll(async () => {
-        fileList = await dpm.getFiles();
-        permList = await dpm.getPermissions(fileList[0].id);
+        permList = await dpm.getPermissions({fileId:fileList[0].id});
     })
-    test('Returns a defined value', async () => {
+    test('Spec 1 TC1: Returns a defined value', async () => {
         expect(permList).toBeDefined();
     })
-    test('Contains only permissions corresponding to a given fileId', () =>{
-        let badPermissionFound = false;
-        let expectedPerms = collect(permList);
-        for(const perm of permList){
-            if(!expectedPerms.contains(perm)){
-                badPermissionFound = true;
-                break;
-            }
-        }
-        expect(badPermissionFound).toBeFalsy();
+    test('Spec 1 TC2: Contains only permissions corresponding to a given fileId', () =>{
+        expect(permList.find(perm => perm.fileId != fileList[0].id)).toBeUndefined();
     })
 })
-
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+////////// addPermission()
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 describe('Category: addPermission()', () => {
-    test('Adds a permission for a given email for a given fileId', async() => {
+    test('Spec 1 TC1: Adds a permission for a given email for a given fileId', async () => {
         try{
-            expect(await dpm.addPermission('1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g', 'reader', 'user', 'jacksonmorton@u.boisestate.edu'))
-            .resolves.toBeDefined();
+            let res = await dpm.addPermission('1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g', 'reader', 'user', 'jacksonmorton@u.boisestate.edu')
+            if(res){
+                validPerm = res;
+            }
+            let updatedPermList = await dpm.getPermissions({fileId:'1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g'})
+            expect(updatedPermList.find(perm => perm.id == res.id)).toBeDefined();
         }
         catch(e){
-            fail(e);
+            // fail(e);
+            console.log(e);
         }
-
     })
-    test('Throws error when file not found in DB.', async () => {
+    test('Spec 2 TC1: Throws error when file not found in DB.', async () => {
         try{
            await dpm.addPermission('lorem_ipsum', 'reader', 'user', 'jacksonmorton@u.boisestate.edu')    
         }
         catch(e){
-            expect(e).toMatch('File not found in database.');
+            expect(e.reason).toMatch('File not found in database.');
+        }
+    })
+    test('Spec 3 TC1: Throws error when provided an invalid role.', async () => {
+        try{
+            // @ts-expect-error
+            await dpm.addPermission('1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g', 'wizard', 'user', 'jacksonmorton@u.boisestate.edu')
+        }
+        catch(e){
+            expect(e.reason).toBe("Invalid role was provided.")
+        }
+    })
+    test('Spec 4 TC1: Throws error when provided an invalid GranteeType.', async () => {
+        try{
+            // @ts-expect-error
+            await dpm.addPermission('1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g', 'reader', 'mlg_quick_scope_clan', 'jacksonmorton@u.boisestate.edu')
+        }
+        catch(e){
+            expect(e.reason).toBe("Invalid granteeType was provided.")
+        }
+    })
+    test('Spec 5 TC1: Rejects email strings that do not contain @ in them.', async () => {
+        try{
+            await dpm.addPermission('1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g', 'reader', 'user', 'lorem_ipsum')
+        }
+        catch(e){
+            expect(e.reason).toBe("Invalid email format.");
+        }
+    })
+})
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+////////// deletePermission()
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+describe('Category: deletePermission()', () => {
+    test('Spec 1 TC1: Deletes a permission when given a valid fileId and associated permissionId', async() => {
+        try{
+            await dpm.deletePermission("1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g", validPerm.id);
+            let updatedPermList = await dpm.getPermissions({fileId:'1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g'});
+            expect(updatedPermList.find(perm => perm.id == validPerm.id)).toBeUndefined();
+        }
+        catch(e){
+            console.log(e);
+        }
+    })
+    test('Spec 3 TC1: Throws an error when given a valid fileId with a permissionId that does not exist.', async () => {
+        try{
+            await dpm.deletePermission("1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g", "123456789")
+        }
+        catch(e){
+            expect(e).toEqual({
+                fileId: '1YwSoa7_yrGz4_DviNPm_zrbUjn6SECSqMKJhjW-rj8g',
+                permissionId:  "123456789",
+                reason: "Permission not found.",
+            });
+        }
+    })
+    test('Spec 4 TC1: Throws an error when given an invalid fileId and a non-associated permissionId', async () =>{
+        try{
+            await dpm.deletePermission("123_seasame_street", "08121125420658720778");
+        }
+        catch(e){
+            expect(e).toEqual({
+                fileId: '123_seasame_street',
+                permissionId:  "08121125420658720778",
+                reason: "File not found.",
+            });
+        }
+    })
+    test('Spec 5 TC1: Throws an error when given an invalid fileId with a permissionId that does not exist', async () =>{
+        try{
+            await dpm.deletePermission("123_seasame_street", "123456789");
+        }
+        catch(e){
+            expect(e).toEqual({
+                fileId: '123_seasame_street',
+                permissionId:  "123456789",
+                reason: "File not found.",
+            });
         }
     })
 })
