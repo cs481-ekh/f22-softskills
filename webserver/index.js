@@ -9,6 +9,8 @@ const DrivePermissionManager =
 //const auth = require("./routes/auth");
 //const login = require("./routes/login");
 
+app.use(express.static("public")); // For custom style sheet
+
 app.use(
   session({
     resave: false,
