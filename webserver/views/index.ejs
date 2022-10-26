@@ -23,9 +23,21 @@
         <button class="btn btn-outline-dark">Add Permissions</button>
         <button class="btn btn-outline-dark">Remove Permission</button>
     </div>
+
     <div class="boxDiv" id='box'>
-
-
+        <div class="enum-pane">
+            <% for( let index=0; index < array.length; index++ ) { %>
+                <div>
+                    <h3></h3>
+                    <%= array[index].name %>
+                        </h3>
+                        <button>List permissions</button>
+                        <button>Add permission</button>
+                        <button>Remove Permission</button>
+                </div>
+                <% } %>
+                
+        </div>
 
         <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
         <div class="preview-pane">
