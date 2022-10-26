@@ -1,3 +1,4 @@
+import { file } from 'googleapis/build/src/apis/file';
 import { Pool } from 'pg';
 import { File, Permission, User } from '../../drive-permission-manager/src/types';
 import { Permissions } from './permissions';
@@ -356,6 +357,25 @@ export class Files {
                 callback(files);
         });
         return Promise.resolve(files);
+    }
+
+    /**
+     * Given an array of file ids, returns an array of the corresponding File objects
+     * 
+     * @param fileIds - Array of file ids to reach
+     * @param callback - Callback function to execute
+     * @returns - Array of Files
+     */
+    async readArray(fileIds: string[], callback?: Function): Promise<File[]> {
+        let filesOut: File[] = [];
+        fileIds.forEach(async id => {
+            let file = await this.read(id);
+            if (file)
+                filesOut.push(file);
+        });
+        if (callback)
+            callback(filesOut);
+        return filesOut;
     }
 
     // ]======MISC TOOLS======[
