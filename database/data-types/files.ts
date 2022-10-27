@@ -378,6 +378,41 @@ export class Files {
         return filesOut;
     }
 
+    /**
+     * Returns array of root files and their immediate children to be run
+     * when the user initially loads the landing page
+     * 
+     * @param callback - Callback function to execute
+     * @returns - Array of root files and their immediate children
+     */
+    async readRootAndChildren(callback?: Function): Promise<File[]> {
+        let filesOut: File[] = [];
+        const res = await this.pool.query("SELECT * FROM Files WHERE PARENTS = '{}'");
+        if (!res || !res.rows || res.rows.length == 0) {
+            console.error("Error in Files.readRoot or no files stored in root directory");
+        } else {
+            for (let r = 0; r < res.rows.length; r++) {
+                let file = res.rows[r];
+                let children: File[] = [];
+                for (let i = 0; i < file.children.length; i++) {
+                    let child = file.children[i];
+                    let childFile;
+                    if (typeof child == "string")
+                        childFile = await this.read(child);
+                    else
+                        childFile = await this.read(child.id);
+                    if (childFile)
+                        children.push(childFile);
+                }
+                file.children = children;
+                filesOut.push(file);
+            }
+        }
+        if (callback)
+            callback(filesOut);
+        return filesOut;
+    }
+
     // ]======MISC TOOLS======[
 
     /**
