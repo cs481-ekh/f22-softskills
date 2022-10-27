@@ -9,7 +9,7 @@
 </head>
 
 <style>
-      body {
+    body {
         background: #FFFFFF;
         padding: 10px 10px 10px 10px;
         height: 100vh;
@@ -17,7 +17,10 @@
         align-items: center;
         width: 100%;
     }
+
     .button {
+        display: flex;
+        justify-content: space-between;
         min-width: 100%;
         min-height: 40px;
         width: 60%;
@@ -27,18 +30,31 @@
         border-radius: 6px;
         box-shadow: #5DA7DE 0px 50px 100px -20px, #5DA7DE 0px 30px 60px -30px, #5DA7DE 0px -2px 6px 0px inset;
         text-align: left;
+        padding-top: 1%;
+        padding-left: 2%;
+        padding-right: 2%;
         font-family: 'product_sansregular', sans-serif;
         font-size: 23px;
     }
+
+    .checkbox {
+        display: flex;
+        min-width: 5%;
+        min-height: 35px;
+       
+    }
+
     .button:hover {
         cursor: pointer;
         background-color: #94d3f7;
     }
+
     .boxDiv {
         align-items: left;
         width: 100%;
         border-style: double;
     }
+
     .parent {
         margin: 5px;
         width: 60%;
@@ -194,12 +210,24 @@
                 buttonContainer.className = classNames.join(' ');
                 // This id is used to find where children will be appended in onClickHandler
                 buttonContainer.id = file.id;
-                const button = document.createElement('button');
+                const button = document.createElement('div');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'checkbox';
                 button.className = 'button';
                 button.textContent = file.name;
                 // Listen and wait to call onClickHandler when button is clicked
                 button.addEventListener('click', onClickHandler);
                 buttonContainer.appendChild(button);
+                button.appendChild(checkbox);
+                checkbox.addEventListener('click', function (event) {
+                    //change the color of the button on checkbox toggle
+                    if (checkbox.checked) {
+                        button.style.backgroundColor = 'grey';
+                    } else {
+                        button.style.backgroundColor = buttonContainer.style.backgroundColor;
+                    }
+                });
                 return buttonContainer;
             }
             // Add the root parent folders to the root container to start
@@ -210,4 +238,5 @@
         </script>
     </div>
 </body>
+
 </html>
