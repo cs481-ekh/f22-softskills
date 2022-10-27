@@ -41,7 +41,7 @@
         display: flex;
         min-width: 5%;
         min-height: 35px;
-       
+
     }
 
     .button:hover {
@@ -226,6 +226,21 @@
                         button.style.backgroundColor = 'grey';
                     } else {
                         button.style.backgroundColor = buttonContainer.style.backgroundColor;
+                    }
+                    // if parent is checked, check all children
+                    if (checkbox.checked) {
+                        var children = buttonContainer.getElementsByClassName('checkbox');
+                        for (var i = 0; i < children.length; i++) {
+                            children[i].checked = true;
+                            children[i].parentElement.style.backgroundColor = 'grey';
+                        }
+                    // if parent is unchecked, uncheck all children    
+                    } else {
+                        var children = buttonContainer.getElementsByClassName('checkbox');
+                        for (var i = 0; i < children.length; i++) {
+                            children[i].checked = false;
+                            children[i].parentElement.style.backgroundColor = buttonContainer.style.backgroundColor;
+                        }
                     }
                 });
                 return buttonContainer;
