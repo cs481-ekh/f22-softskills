@@ -2,12 +2,16 @@ import { GoogleAuth, OAuth2Client } from "google-auth-library";
 import { File, GranteeType, Permission, User, Role, GetPermissionsOptions } from "./types";
 import { drive_v3, google } from "googleapis";
 import { Postgres } from "../../database/postgres";
+import { ParameterDescriptionMessage } from "pg-protocol/dist/messages";
 interface IDrivePermissionManager {
   /**
-   * Returns an array of File objects.
-   * @Return [File]
+   * Returns an array of File objects. If the parameter fileIds
+   * is provided, then the corresponding File objects will be returned
+   * otherwise File objects without parents and their corresponding children
+   * will be returned.
+   * @Return Promise<File[]>
    */
-  getFiles(): Promise<File[]>;
+  getFiles(fileIds?: string[]): Promise<File[]>;
   /**
    * Returns an [] containing the permissions of a given fileId
    * or the permissions associated with an email address.
@@ -43,19 +47,11 @@ class DrivePermissionManager implements IDrivePermissionManager {
     this.db = new Postgres();
   }
   async initDb() {
-    await this.db.initTables(); // Init db
-    const fileList: File[] = await this.getFiles(); // Get files from Google Drive
-    for (const file of fileList) {
-      await this.db.files.create(file); // Create a file entry in DB
-      for (const permission of file.permissions) {
-        await this.db.permissions.create(permission); // Create permission entry in DB
-        await this.db.users.create(permission.user); // Create user entry in DB
-      }
-    }
-  }
-  async getFiles(): Promise<File[]> {
+    // console.log("In initDb() ------------------->")
+    // const fileList: File[] = await this.getFiles(); // Get files from Google Drive
+    let fileList: File[] = [];
     try {
-      const fileList: File[] = [];
+      await this.db.initTables(); // Init db
       var parentToChildrenMap = new Map();
       let NextPageToken = "";
       do {
@@ -119,7 +115,8 @@ class DrivePermissionManager implements IDrivePermissionManager {
           fileList.push(file);
           // Establish who its parents are and if this file has parents add this fileId
           if (file.parents && file.parents.length) {
-            for (const parentId of f.parents) {
+            
+            for (const parentId of file.parents) {
               const children = parentToChildrenMap.get(parentId);
               if (children) {
                 // If the parent already has children
@@ -134,18 +131,56 @@ class DrivePermissionManager implements IDrivePermissionManager {
         });
         NextPageToken = res.data.nextPageToken;
       } while (NextPageToken);
+
+      // Assign children to parents
       let parentCount = parentToChildrenMap.size;
       for (const file of fileList) {
         if (parentCount) {
           if (parentToChildrenMap.get(file.id)) {
             file.children = parentToChildrenMap.get(file.id);
+            parentToChildrenMap.delete(file.id);
             parentCount--;
           }
         } else break;
       }
-      return fileList;
+      // If parent count is still > 0 then that means that the parent file wasn't present so remove
+      if(parentCount){
+        let parentIds = Array.from(parentToChildrenMap.keys())
+        for(const file of fileList){
+          file.parents = file.parents.filter(parentId => !parentIds.includes(parentId))
+        }
+      }
+      console.log(JSON.stringify(fileList))
+      try{
+        await this.db.files.populateTable(fileList);
+      }
+      catch(e){
+        console.log('Problem populating table', e);
+      }
+
     } catch (e) {
       console.log(e);
+    }
+    // console.log("<-----------------------------")
+  }
+  async getFiles(fileIds?: string[]): Promise<File[]> {
+    try{
+      let files: File[] = [];
+      if(fileIds){
+        console.log(fileIds)
+        files = await this.db.files.readArray(fileIds);
+      }
+      else{
+        files = await this.db.files.readRootAndChildren(); 
+      }
+      console.log(JSON.stringify(files))
+      return Promise.resolve(files);
+    }
+    catch(e){
+      return Promise.reject({
+        fileIds,
+        reason: `Error: Failed to read files from db...\n${e}`
+      })
     }
   }
   async getPermissions(s: GetPermissionsOptions): Promise<Permission[]> {
@@ -346,6 +381,21 @@ class DrivePermissionManager implements IDrivePermissionManager {
       });
     }
   }
+//   async getDrives(): Promise<any[]> {
+//     try{
+//       let retVal: any[] = [];
+//       const res = await this.drive.drives.list();
+//       for(const drive of res.data.drives){
+//         console.log('ID OF DRIVE: ' + drive.id);
+//         retVal.push(drive.id);
+//       }
+//       console.log("LIST OF DRIVES: " + retVal)
+//       return Promise.resolve(retVal);
+//     }
+//     catch(e){
+//       return Promise.reject(e)
+//     }
+//   }
 }
 
 export default DrivePermissionManager;

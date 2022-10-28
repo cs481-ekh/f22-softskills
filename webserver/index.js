@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const app = express();
 const session = require("express-session");
@@ -10,7 +11,7 @@ const DrivePermissionManager =
 //const login = require("./routes/login");
 
 app.use(express.static("public")); // For custom style sheet
-
+app.use(express.urlencoded({extended:true}))
 app.use(
   session({
     resave: false,
@@ -18,6 +19,7 @@ app.use(
     secret: "SECRET",
   })
 );
+app.use(express.json())
 
 //app.use("/api", api);
 //app.use("/auth", auth);
@@ -25,7 +27,7 @@ app.use(
 
 const port = 3000;
 async function startup() {
-  dpm = await new DrivePermissionManager(oauth2Client);
+
 }
 
 /*  PASSPORT SETUP  */
@@ -35,7 +37,7 @@ var userProfile;
 app.use(passport.initialize());
 app.use(passport.session());
 app.set("view engine", "ejs");
-
+const utf8 = require('utf8')
 passport.serializeUser(function (user, cb) {
   cb(null, user);
 });
@@ -87,7 +89,7 @@ app.get("/", function (req, res) {
 });
 
 app.get("/login", (req, res) => {
-  res.render("login",);
+  res.render("login");
 });
 
 app.get(
@@ -117,8 +119,9 @@ app.get("/success", async (req, res) => {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
+      await client.initDb();
       const fileList = await client.getFiles();
-      console.log(JSON.stringify(fileList));
+      // console.log(JSON.stringify(fileList));
       res.render("index", { array: fileList || [] });
     } catch (e) {
       console.log("ERROR", e);
@@ -129,20 +132,25 @@ app.get("/success", async (req, res) => {
 
 // getFiles
 app.get("/getFiles", async (req, res) => {
-  if (req.user && req.user.accessToken) {
+  if (req.isAuthenticated()) {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
-      const fileList = await client.getFiles();
-      console.log(JSON.stringify(fileList));
+      let fileList = await client.getFiles([req.query.fileIds].flat())
       res.render("index", { array: fileList || [] });
     } catch (e) {
-      console.log("ERROR", e);
-      res.sendStatus(403);
+      res.json(e);
+      console.log(e);
     }
-  } else res.redirect("/success");
+  }
+  else{
+    res.redirect('/login');
+  }
 });
-
+app.get('/testing', (req, res) => {
+  console.log(req.query)
+  res.send(req.query)
+})
 // getPermissions
 app.get("/getPermissions", async (req, res) => {
   if (req.user && req.user.accessToken) {
