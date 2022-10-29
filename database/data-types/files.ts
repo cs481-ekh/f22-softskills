@@ -368,11 +368,11 @@ export class Files {
      */
     async readArray(fileIds: string[], callback?: Function): Promise<File[]> {
         let filesOut: File[] = [];
-        fileIds.forEach(async id => {
-            let file = await this.read(id);
+        for(let i = 0; i < fileIds.length; i++) {
+            let file = await this.read(fileIds[i]);
             if (file)
                 filesOut.push(file);
-        });
+        }
         if (callback)
             callback(filesOut);
         return filesOut;
