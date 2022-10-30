@@ -309,7 +309,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
         reject({
           fileId,
           role,
-          granteeType: s,
+          granteeType: type,
           email: s,
           reason: "Invalid granteeType was provided.",
         });
@@ -322,7 +322,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
         reject({
           fileId,
           role,
-          granteeType: s,
+          granteeType: type,
           email: s,
           reason: "File not found in database.",
         });
