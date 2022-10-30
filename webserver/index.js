@@ -119,9 +119,9 @@ app.get("/success", async (req, res) => {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
-      await client.initDb();
+      // await client.initDb();
       const fileList = await client.getFiles();
-      // console.log(JSON.stringify(fileList));
+      console.log(JSON.stringify(fileList));
       res.render("index", { array: fileList || [] });
     } catch (e) {
       console.log("ERROR", e);
@@ -136,8 +136,10 @@ app.get("/getFiles", async (req, res) => {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
-      let fileList = await client.getFiles([req.query.fileIds].flat())
-      res.render("index", { array: fileList || [] });
+      let fileList;
+      if(req.query.fileIds) fileList = await client.getFiles([req.query.fileIds].flat())
+      else fileList = await client.getFiles();
+      res.json(fileList);
     } catch (e) {
       res.json(e);
       console.log(e);

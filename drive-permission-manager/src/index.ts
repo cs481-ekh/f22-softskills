@@ -150,7 +150,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
           file.parents = file.parents.filter(parentId => !parentIds.includes(parentId))
         }
       }
-      console.log(JSON.stringify(fileList))
+      // console.log(JSON.stringify(fileList))
       try{
         await this.db.files.populateTable(fileList);
       }
@@ -166,14 +166,20 @@ class DrivePermissionManager implements IDrivePermissionManager {
   async getFiles(fileIds?: string[]): Promise<File[]> {
     try{
       let files: File[] = [];
-      if(fileIds){
-        console.log(fileIds)
+      if(fileIds && fileIds.length){
         files = await this.db.files.readArray(fileIds);
+        if(!files || files.length != fileIds.length){
+          return Promise.reject({
+            fileIds,
+            files,
+            reason: `Files not found.`,
+            missingFiles: fileIds.filter(id => !files.find(file => file.id == id))
+          })
+        }
       }
       else{
         files = await this.db.files.readRootAndChildren(); 
       }
-      console.log(JSON.stringify(files))
       return Promise.resolve(files);
     }
     catch(e){
