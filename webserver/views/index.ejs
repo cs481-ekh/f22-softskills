@@ -9,7 +9,7 @@
 </head>
 
 <style>
-      body {
+    body {
         background: #FFFFFF;
         padding: 10px 10px 10px 10px;
         height: 100vh;
@@ -17,7 +17,10 @@
         align-items: center;
         width: 100%;
     }
+
     .button {
+        display: flex;
+        justify-content: space-between;
         min-width: 100%;
         min-height: 40px;
         width: 60%;
@@ -27,18 +30,30 @@
         border-radius: 6px;
         box-shadow: #5DA7DE 0px 50px 100px -20px, #5DA7DE 0px 30px 60px -30px, #5DA7DE 0px -2px 6px 0px inset;
         text-align: left;
+        padding-top: 1%;
+        padding-left: 2%;
+        padding-right: 2%;
         font-family: 'product_sansregular', sans-serif;
         font-size: 23px;
     }
+
+    .checkbox {
+        display: flex;
+        min-width: 5%;
+        min-height: 35px;
+    }
+
     .button:hover {
         cursor: pointer;
         background-color: #94d3f7;
     }
+
     .boxDiv {
         align-items: left;
         width: 100%;
         border-style: double;
     }
+
     .parent {
         margin: 5px;
         width: 60%;
@@ -58,6 +73,8 @@
         margin-top: auto;
         margin-bottom: auto;
         width: 66.66%;
+        height: 100%;
+        overflow-y: scroll;
     }
 
     .preview-pane {
@@ -72,6 +89,8 @@
         color: black;
         background-color: white;
         width: 33.33%;
+        height: 100%;
+        overflow-y: scroll;
     }
 
     .access-top {
@@ -96,6 +115,14 @@
         text-indent: 5%;
         color: whitesmoke;
     }
+
+    .selected-preview {
+        background-color: gray;
+        height: 100%;
+        text-align: center;
+        font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+        color: whitesmoke
+    }
 </style>
 
 <body>
@@ -118,6 +145,7 @@
         <div class="access-top">
             <h1>Drive Contents</h1>
         </div>
+    
 
         <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
         <script>
@@ -138,18 +166,23 @@
                 // Preview pane stuff for single file selection
                 //
 
+                if(document.querySelectorAll("input[type=checkbox]:checked").length <= 0)
+                {
                 const previewFile = _.find(files, { 'id': fileId });
-                console.log(previewFile)
 
-                var r = '<p>' + '<h1>' + _.get(previewFile, 'name') + '</h1>' + '</p>';
+                var r = '<p>' + '<h2>' + _.get(previewFile, 'name') + '</h2>' + '</p>';
+                r = r + '<h3>Owner</h3>' + '<div name="info" class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' + _.get(previewFile, 'owners[0].displayName') + '<span class="caret"></span></button>'
+                r = r + '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">'
+                r = r + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(previewFile, 'owners[0].emailAddress') + '</a></li>'
+                r = r + '</ul>' + '</div>'
+
+                var j = _.get(previewFile, 'owners[0].displayName');
                 var x = '<br>' + ' ' + '</br>';
                 var z = _.get(previewFile, 'permissions');
                 var t = [];
 
-                console.log('var z: ' + z);
-
                 for (let index2 = 0; index2 < z.length; index2++) {
-                    if (_.get(z[index2], 'user.displayName') !== "drive-permission-manager@driver-permission-manager.iam.gserviceaccount.com") {
+                    if (_.get(z[index2], 'user.displayName') !== "drive-permission-manager@driver-permission-manager.iam.gserviceaccount.com" && _.get(previewFile, 'owners[0].displayName') !== _.get(z[index2], 'user.displayName')) {
                         var q = '<div name="info" class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' + _.get(z[index2], 'user.displayName') + '<span class="caret"></span></button>'
                         q = q + '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">'
                         q = q + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(z[index2], 'user.emailAddress') + '</a></li>'
@@ -160,9 +193,9 @@
                 }
                 document.getElementById('list').innerHTML = '';
                 document.getElementById('list').innerHTML = '<div>' + document.getElementById('list').innerHTML + ' ' + r + '<h2>Who has access</h2>' + t + x + '</div>';
-
+            }
                 //
-                // End preview pan stuff
+                // End preview pane stuff
                 //
 
                 const buttonContainer = document.getElementById(fileId);
@@ -184,9 +217,7 @@
                         const childButton = createButton(childFile, ['child']);
                         buttonContainer.appendChild(childButton);
                     });
-
                 }
-
             }
             // Creates a new button element and applies class names to the button container
             const createButton = (file, classNames = []) => {
@@ -194,12 +225,66 @@
                 buttonContainer.className = classNames.join(' ');
                 // This id is used to find where children will be appended in onClickHandler
                 buttonContainer.id = file.id;
-                const button = document.createElement('button');
+                const button = document.createElement('div');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'checkbox';
                 button.className = 'button';
                 button.textContent = file.name;
                 // Listen and wait to call onClickHandler when button is clicked
                 button.addEventListener('click', onClickHandler);
                 buttonContainer.appendChild(button);
+                button.appendChild(checkbox);
+                checkbox.addEventListener('click', function (event) {
+                    //change the color of the button on checkbox toggle
+                    if (checkbox.checked) {
+                        button.style.backgroundColor = 'grey';
+
+                        // Preview pane stuff
+
+                        var checkboxs = document.querySelectorAll("input[type=checkbox]:checked");
+                        var numSelected = checkboxs.length;
+                        document.getElementById('list').innerHTML = '';
+                        document.getElementById('list').innerHTML = '<div class = "selected-preview">' + '<h2>' + numSelected + ' Files Selected' + '</h2>' + '</div>'
+
+                        // End preview pane stuff
+                    } else {
+                        button.style.backgroundColor = buttonContainer.style.backgroundColor;
+                    }
+                    // if parent is checked, check all children
+                    if (checkbox.checked) {
+                        var children = buttonContainer.getElementsByClassName('checkbox');
+                        for (var i = 0; i < children.length; i++) {
+                            children[i].checked = true;
+                            children[i].parentElement.style.backgroundColor = 'grey';
+                        }
+                        // if parent is unchecked, uncheck all children    
+
+                        // Preview pane stuff
+
+                        var checkboxs = document.querySelectorAll("input[type=checkbox]:checked");
+                        var numSelected = checkboxs.length;
+                        document.getElementById('list').innerHTML = '';
+                        document.getElementById('list').innerHTML = '<div class = "selected-preview">' + '<h2>' + numSelected + ' Files Selected' + '</h2>' + '</div>'
+
+                        // End preview pane stuff
+                    } else {
+                        var children = buttonContainer.getElementsByClassName('checkbox');
+                        for (var i = 0; i < children.length; i++) {
+                            children[i].checked = false;
+                            children[i].parentElement.style.backgroundColor = buttonContainer.style.backgroundColor;
+                        }
+
+                        // Preview pane stuff
+
+                        var checkboxs = document.querySelectorAll("input[type=checkbox]:checked");
+                        var numSelected = checkboxs.length;
+                        document.getElementById('list').innerHTML = '';
+                        document.getElementById('list').innerHTML = '<div class = "selected-preview">' + '<h2>' + numSelected + ' Files Selected' + '</h2>' + '</div>'
+
+                        // End preview pane stuff
+                    }
+                });
                 return buttonContainer;
             }
             // Add the root parent folders to the root container to start
@@ -210,4 +295,5 @@
         </script>
     </div>
 </body>
+
 </html>
