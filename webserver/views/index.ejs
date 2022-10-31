@@ -74,6 +74,9 @@
         margin-top: auto;
         margin-bottom: auto;
         width: 66.66%;
+        height: 100%;
+        overflow-y: scroll;
+        font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
     }
 
     .preview-pane {
@@ -88,6 +91,8 @@
         color: black;
         background-color: white;
         width: 33.33%;
+        height: 100%;
+        overflow-y: scroll;
     }
 
     .access-top {
@@ -155,14 +160,18 @@
                 //
 
                 const previewFile = _.find(files, { 'id': fileId });
-                console.log(previewFile)
 
-                var r = '<p>' + '<h1>' + _.get(previewFile, 'name') + '</h1>' + '</p>';
+                var r = '<p>' + '<h2>' + _.get(previewFile, 'name') + '</h2>' + '</p>';
+                r = r + '<h3>Owner</h3>' + '<div name="info" class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' + _.get(previewFile, 'owners[0].displayName') + '<span class="caret"></span></button>'
+                r = r + '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">'
+                r = r + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(previewFile, 'owners[0].emailAddress') + '</a></li>'
+                r = r + '</ul>' + '</div>'
+
+                var j = _.get(previewFile, 'owners[0].displayName');
                 var x = '<br>' + ' ' + '</br>';
                 var z = _.get(previewFile, 'permissions');
                 var t = [];
 
-                console.log('var z: ' + z);
 
                 for (let index2 = 0; index2 < z.length; index2++) {
                     if (_.get(z[index2], 'user.displayName') !== "drive-permission-manager@driver-permission-manager.iam.gserviceaccount.com") {
