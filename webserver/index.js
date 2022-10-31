@@ -140,10 +140,7 @@ app.get("/getFiles", async (req, res) => {
     res.redirect('/login');
   }
 });
-app.get('/testing', (req, res) => {
-  console.log(req.query)
-  res.send(req.query)
-})
+
 // getPermissions
 app.get("/getPermissions", async (req, res) => {
   if (req.user && req.user.accessToken) {
@@ -161,22 +158,28 @@ app.get("/getPermissions", async (req, res) => {
 });
 
 // deletePermissions
-app.post("/deletePermission/:fileId/:permissionId", async (req, res) => {
-  if (req.user && req.user.accessToken) {
+app.post("/deletePermission", async (req, res) => {
+  if (req.isAuthenticated() && req.user && req.user.accessToken) {
     try {
-      const { fileId, permissionId } = req.params;
+      const { fileId, permissionId } = req.body;
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
-      await client.deletePermission(fileId, permissionId);
-      const permissionList = await client.getPermission(fileId);
-      console.log(JSON.stringify(permissionList));
-      res.render("index", { array: permissionList || [] });
-      res.send(req.params);
-    } catch (e) {
-      console.log("ERROR", e);
-      res.sendStatus(403);
+      try{
+        await client.deletePermission(fileId, permissionId);
+      }
+      catch(error){
+        if(error.reason == "Failed to update db."){
+          res.sendStatus(500).json({fileId, permissionId, error})
+        }
+        else res.sendStatus(400).json({fileId, permissionId, error})
+      }
     }
-  } else res.redirect("/success");
+    catch (e) {
+      res.json(e);
+      console.log("ERROR", e);
+    }
+  }
+  else res.redirect("/login");
 });
 
 // addPermissions
