@@ -75,6 +75,7 @@
         width: 66.66%;
         height: 100%;
         overflow-y: scroll;
+        font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
     }
 
     .preview-pane {
@@ -240,6 +241,7 @@
                     if (checkbox.checked) {
                         button.style.backgroundColor = 'grey';
 
+
                         // Preview pane stuff
 
                         var checkboxs = document.querySelectorAll("input[type=checkbox]:checked");
@@ -247,7 +249,8 @@
                         document.getElementById('list').innerHTML = '';
                         document.getElementById('list').innerHTML = '<div class = "selected-preview">' + '<h2>' + numSelected + ' Files Selected' + '</h2>' + '</div>'
 
-                        // End preview pane stuff
+
+
                     } else {
                         button.style.backgroundColor = buttonContainer.style.backgroundColor;
                     }
@@ -258,6 +261,7 @@
                             children[i].checked = true;
                             children[i].parentElement.style.backgroundColor = 'grey';
                         }
+
                         // if parent is unchecked, uncheck all children    
 
                         // Preview pane stuff
@@ -268,6 +272,9 @@
                         document.getElementById('list').innerHTML = '<div class = "selected-preview">' + '<h2>' + numSelected + ' Files Selected' + '</h2>' + '</div>'
 
                         // End preview pane stuff
+
+                    // if parent is unchecked, uncheck all children    
+
                     } else {
                         var children = buttonContainer.getElementsByClassName('checkbox');
                         for (var i = 0; i < children.length; i++) {
@@ -283,6 +290,7 @@
                         document.getElementById('list').innerHTML = '<div class = "selected-preview">' + '<h2>' + numSelected + ' Files Selected' + '</h2>' + '</div>'
 
                         // End preview pane stuff
+
                     }
                 });
                 return buttonContainer;

@@ -49,6 +49,21 @@ export class Postgres {
     }
 
     /**
+     * Drops the Files, Permissions, and Users tables
+     * 
+     * @param callback - Callback function to be executed
+     * @returns - Response from the query
+     */
+    async dropTables(callback?: Function): Promise<any> {
+        const res = await this.pool.query("DROP TABLE IF EXISTS Files, Permissions, Users;");
+        if (!res)
+            console.error("Error in Postgres.dropTables");
+        if (callback)
+            callback(res);
+        return res;
+    }
+
+    /**
      * Close the connections to the database
      */
     close() {
