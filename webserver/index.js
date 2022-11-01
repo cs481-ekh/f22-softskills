@@ -11,7 +11,7 @@ const DrivePermissionManager =
 //const login = require("./routes/login");
 
 app.use(express.static("public")); // For custom style sheet
-app.use(express.urlencoded({extended:true}))
+app.use(express.urlencoded({ extended: true }))
 app.use(
   session({
     resave: false,
@@ -37,7 +37,7 @@ var userProfile;
 app.use(passport.initialize());
 app.use(passport.session());
 app.set("view engine", "ejs");
-const utf8 = require('utf8')
+// const utf8 = require('utf8')
 passport.serializeUser(function (user, cb) {
   cb(null, user);
 });
@@ -137,7 +137,7 @@ app.get("/getFiles", async (req, res) => {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
       let fileList;
-      if(req.query.fileIds) fileList = await client.getFiles([req.query.fileIds].flat())
+      if (req.query.fileIds) fileList = await client.getFiles([req.query.fileIds].flat())
       else fileList = await client.getFiles();
       res.json(fileList);
     } catch (e) {
@@ -145,7 +145,7 @@ app.get("/getFiles", async (req, res) => {
       console.log(e);
     }
   }
-  else{
+  else {
     res.redirect('/login');
   }
 });

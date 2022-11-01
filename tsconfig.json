@@ -17,6 +17,7 @@
     },
     "include": [
         "database/*/*",
-        "drive-permission-manager/src/*"
+        "drive-permission-manager/src/*",
+        "webserver/scripts/*"
     ]
 }
