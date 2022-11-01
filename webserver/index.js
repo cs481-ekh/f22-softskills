@@ -28,7 +28,6 @@ var userProfile;
 app.use(passport.initialize());
 app.use(passport.session());
 app.set("view engine", "ejs");
-const utf8 = require('utf8')
 passport.serializeUser(function (user, cb) {
   cb(null, user);
 });
