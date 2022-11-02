@@ -264,12 +264,11 @@ export class Files {
                 callback(undefined);
             return Promise.resolve(undefined);
         }
-        let filesOut = files;
         let query = "INSERT INTO Files (ID, KIND, NAME, PARENTS, CHILDREN, OWNERS, PERMISSIONS) VALUES ";
         let permissions: Permission[] = [];
         let owners: User[] = [];
         files.forEach(file => {
-            query += "('" + file.id + "', '" + file.kind + "', '" + file.name
+            query += "('" + file.id + "', '" + file.kind + "', '" + file.name.replaceAll("'", "''")
                 + "', '" + this.arrayToString(file.parents ? file.parents : undefined) + "', '" + this.fileArrayToString(file.children)
                 + "', '" + this.ownersArrayToString(file.owners) + "', '" + this.permArrayToString(file.permissions)
                 + "'), ";
@@ -283,26 +282,12 @@ export class Files {
             });
         });
         query = query.slice(0, query.length - 2) + " ON CONFLICT (ID) DO NOTHING;";
-        await this.pool.query(query).then(async res => {
-            if (!res)
-                console.error("Error in Files.populateTable");
-            else {
-                await this.permissions.populateTable(permissions).then(async res => {
-                    if (!res)
-                        console.error("Error in Files.populateTable");
-                    else {
-                        const uRes = await this.users.populateTable(owners);
-                        if (!uRes && owners && owners.length > 0)
-                            console.error("Error in Files.populatetable");
-                        else
-                            filesOut = files;
-                    }
-                });
-            }
-            if (callback)
-                callback(files);
-        });
-        return Promise.resolve(filesOut);
+        await this.pool.query(query);
+        await this.permissions.populateTable(permissions);
+        await this.users.populateTable(owners);
+        if (callback)
+            callback(files);
+        return Promise.resolve(files);
     }
 
     /**
@@ -400,6 +385,24 @@ export class Files {
                         children.push(childFile);
                 }
                 file.children = children;
+                if (file.owners && file.owners.length > 0) {
+                    let owners: User[] = [];
+                    for (let i = 0; i < file.owners.length; i++) {
+                        let owner = await this.users.read(file.owners[i]);
+                        if (owner)
+                            owners.push(owner);
+                    }
+                    file.owners = owners;
+                }
+                if (file.permissions && file.permissions.length > 0) {
+                    let permissions: Permission[] = [];
+                    for (let i = 0; i < file.permissions.length; i++) {
+                        let permission = await this.permissions.read(file.permissions[i]);
+                        if (permission)
+                            permissions.push(permission);
+                    }
+                    file.permissions = permissions;
+                }
                 filesOut.push(file);
             }
         }

@@ -5,25 +5,16 @@ const session = require("express-session");
 const fetch = require("node-fetch");
 const DrivePermissionManager =
   require("../dist/drive-permission-manager/src/").default;
-
-//const api = require("./routes/api");
-//const auth = require("./routes/auth");
-//const login = require("./routes/login");
-
 app.use(express.static("public")); // For custom style sheet
 app.use(express.urlencoded({ extended: true }))
 app.use(
   session({
-    resave: false,
+    resave: true,
     saveUninitialized: true,
     secret: "SECRET",
   })
 );
 app.use(express.json())
-
-//app.use("/api", api);
-//app.use("/auth", auth);
-//app.use("/login", login);
 
 const port = 3000;
 async function startup() {
@@ -37,7 +28,6 @@ var userProfile;
 app.use(passport.initialize());
 app.use(passport.session());
 app.set("view engine", "ejs");
-// const utf8 = require('utf8')
 passport.serializeUser(function (user, cb) {
   cb(null, user);
 });
@@ -85,7 +75,8 @@ passport.use(
 /* GENERAL ROUTE HANDLING */
 
 app.get("/", function (req, res) {
-  res.render("login");
+  if(req.isAuthenticated()) res.redirect('/success');
+  else res.redirect('/login');
 });
 
 app.get("/login", (req, res) => {
@@ -119,9 +110,8 @@ app.get("/success", async (req, res) => {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
-      // await client.initDb();
+      await client.initDb();
       const fileList = await client.getFiles();
-      console.log(JSON.stringify(fileList));
       res.render("index", { array: fileList || [] });
     } catch (e) {
       console.log("ERROR", e);
@@ -149,10 +139,7 @@ app.get("/getFiles", async (req, res) => {
     res.redirect('/login');
   }
 });
-app.get('/testing', (req, res) => {
-  console.log(req.query)
-  res.send(req.query)
-})
+
 // getPermissions
 app.get("/getPermissions", async (req, res) => {
   if (req.user && req.user.accessToken) {
@@ -170,42 +157,52 @@ app.get("/getPermissions", async (req, res) => {
 });
 
 // deletePermissions
-app.post("/deletePermission/:fileId/:permissionId", async (req, res) => {
-  if (req.user && req.user.accessToken) {
+app.post("/deletePermission", async (req, res) => {
+  if (req.isAuthenticated() && req.user && req.user.accessToken) {
     try {
-      const { fileId, permissionId } = req.params;
+      const { fileId, permissionId } = req.body;
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
-      await client.deletePermission(fileId, permissionId);
-      const permissionList = await client.getPermission(fileId);
-      console.log(JSON.stringify(permissionList));
-      res.render("index", { array: permissionList || [] });
-      res.send(req.params);
-    } catch (e) {
-      console.log("ERROR", e);
-      res.sendStatus(403);
+      try{
+        await client.deletePermission(fileId, permissionId);
+      }
+      catch(error){
+        if(error.reason == "Failed to update db."){
+          res.sendStatus(500).json({fileId, permissionId, error})
+        }
+        else res.sendStatus(400).json({fileId, permissionId, error})
+      }
     }
-  } else res.redirect("/success");
+    catch (e) {
+      res.json(e);
+      console.log("ERROR", e);
+    }
+  }
+  else res.redirect("/login");
 });
 
 // addPermissions
-app.post("/addPermission/:fileId/:Role/:GranteeType/:s", async (req, res) => {
+app.post("/addPermission", async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
-      const { fileId, Role, GranteeType, s } = req.params;
+      const { fileId, role, granteeType, emails } = req.body;
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
-      await client.addPermission(fileId, Role, GranteeType, s);
-      const permissionList = await client.getPermission(fileId);
-      console.log(JSON.stringify(permissionList));
-      res.render("index", { array: permissionList || [] });
-    } catch (e) {
-      console.log("ERROR", e);
-      res.sendStatus(403);
+      const resVal = [];
+      for(const email of emails){
+        resVal.push(await client.addPermission(fileId, role, granteeType, email));
+      }
+      res.json(resVal);
     }
-  } else res.redirect("/success");
+    catch (e) {
+      res.json(e);
+      console.log("ERROR", e);
+    }
+  }
+  else res.sendStatus(401);
 });
 
+app.get('*', (req, res) => res.send(`<h1>404</h1><image src="https://thumbs.gfycat.com/AccurateUnfinishedBergerpicard-size_restricted.gif">`));
 app.listen(port, async () => {
   await startup();
   console.log("App listening on port " + port);

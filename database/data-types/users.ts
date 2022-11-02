@@ -140,7 +140,9 @@ export class Users {
         let usersOut: User[] | undefined;
         let query = "INSERT INTO Users (EMAIL, DISPLAY_NAME, PHOTOLINK) VALUES ";
         users.forEach(user => {
-            query += "('" + user.emailAddress + "', '" + user.displayName + "', '" + user.photoLink + "'), ";
+            query += "('" + user.emailAddress + "', '"
+                + (user.displayName ? user.displayName.replaceAll("'", "''") : user.emailAddress)
+                + "', '" + (user.photoLink ? user.photoLink : "") + "'), ";
         });
         query = query.slice(0, query.length - 2) + " ON CONFLICT (EMAIL) DO NOTHING;";
         await this.pool.query(query).then(res => {
