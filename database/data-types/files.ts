@@ -388,7 +388,7 @@ export class Files {
                 if (file.owners && file.owners.length > 0) {
                     let owners: User[] = [];
                     for (let i = 0; i < file.owners.length; i++) {
-                        let owner = await this.users.read(file.owners[i]);
+                        let owner = await this.users.read(res.rows[r].owners[i]);
                         if (owner)
                             owners.push(owner);
                     }
@@ -397,7 +397,7 @@ export class Files {
                 if (file.permissions && file.permissions.length > 0) {
                     let permissions: Permission[] = [];
                     for (let i = 0; i < file.permissions.length; i++) {
-                        let permission = await this.permissions.read(file.permissions[i]);
+                        let permission = await this.permissions.read(res.rows[r].permissions[i]);
                         if (permission)
                             permissions.push(permission);
                     }
