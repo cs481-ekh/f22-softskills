@@ -19,8 +19,8 @@
         integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx"
         crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
-
 </head>
+
 
 <body>
     <script>
@@ -92,6 +92,43 @@
                 }
                 document.getElementById('list').innerHTML = '';
                 document.getElementById('list').innerHTML = '<div>' + document.getElementById('list').innerHTML + ' ' + titleOwner + '<h2>Who has access</h2>' + accessList + '<br>' + ' ' + '</br>' + '</div>';
+            }
+        }
+    </script>
+
+<body>
+    <script>
+        function addPermission() {
+            let emails = document.getElementById('emailTextEntry').value;
+            let permission = document.getElementById('inputState').value;
+            let fileIds = Array.from(document.querySelectorAll("input[type=checkbox]:checked"));
+            let fileIdArray = [];
+            let emailArray = emails.split('\n');
+
+            document.getElementById('emailTextEntry').value = '';
+            document.getElementById('inputState').value = 'choose...';
+
+            for (let i = 0; i < fileIds.length; i++) {
+                fileIdArray.push(fileIds[i].name)
+            }
+
+            const addPost = async (fileId, role, granteeType, emails) => {
+                const url = `/addPermission`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fileId: fileIdArray,
+                        role: role,
+                        granteeType: granteeType,
+                        emails: emailArray
+                    })
+                });
+                if (response.status !== 200) {
+                    throw new Error('Error setting permission');
+                }
             }
         }
     </script>
@@ -235,8 +272,7 @@
                 box.appendChild(createButton(parent, ['parent']));
             });
         </script>
-        
+
     </div>
 </body>
-
 </html>
