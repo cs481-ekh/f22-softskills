@@ -384,7 +384,7 @@ export class Files {
                     if (childFile)
                         children.push(childFile);
                 }
-                file.children = children;
+                filesOut = filesOut.concat(children);
                 if (file.owners && file.owners.length > 0) {
                     let owners: User[] = [];
                     for (let i = 0; i < file.owners.length; i++) {
