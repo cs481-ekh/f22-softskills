@@ -19,8 +19,8 @@
         integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx"
         crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
-</head>
 
+</head>
 
 <body>
     <script>
@@ -92,43 +92,6 @@
                 }
                 document.getElementById('list').innerHTML = '';
                 document.getElementById('list').innerHTML = '<div>' + document.getElementById('list').innerHTML + ' ' + titleOwner + '<h2>Who has access</h2>' + accessList + '<br>' + ' ' + '</br>' + '</div>';
-            }
-        }
-    </script>
-
-<body>
-    <script>
-        function addPermission() {
-            let emails = document.getElementById('emailTextEntry').value;
-            let permission = document.getElementById('inputState').value;
-            let fileIds = Array.from(document.querySelectorAll("input[type=checkbox]:checked"));
-            let fileIdArray = [];
-            let emailArray = emails.split('\n');
-
-            document.getElementById('emailTextEntry').value = '';
-            document.getElementById('inputState').value = 'choose...';
-
-            for (let i = 0; i < fileIds.length; i++) {
-                fileIdArray.push(fileIds[i].name)
-            }
-
-            const addPost = async (fileId, role, granteeType, emails) => {
-                const url = `/addPermission`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        fileId: fileIdArray,
-                        role: role,
-                        granteeType: granteeType,
-                        emails: emailArray
-                    })
-                });
-                if (response.status !== 200) {
-                    throw new Error('Error setting permission');
-                }
             }
         }
     </script>
@@ -268,41 +231,12 @@
             }
             // Add the root parent folders to the root container to start
             const box = document.getElementById('box');
-            const removeButton = document.getElementById('remove');
-
-            const setPermission = async (fileId, permissionId) => {
-                const url = `/deletePermission`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        fileId: fileId,
-                        permissionId: permissionId
-                    })
-                });
-                if (response.status !== 200) {
-                    throw new Error('Error setting permission');
-                }
-            }
-
-            removeButton.addEventListener('click', (event) => {
-                const checkBoxes = document.getElementsByClassName('checkbox');
-                const isChecked = Array.from(checkBoxes).filter((checkbox) => checkbox.checked);
-                isChecked.forEach((file) => {
-                    const fileId = file.parentNode.parentNode.id;
-                    const permissionIds = (files.find((file) => file.id === fileId).permissions || []).map((permission) => permission.id);
-                    permissionIds.forEach((permissionId) => {
-                        setPermission(fileId, permissionId);
-                    });
-                });
-            });
             rootParents.forEach((parent) => {
                 box.appendChild(createButton(parent, ['parent']));
             });
         </script>
-
+        
     </div>
 </body>
+
 </html>
