@@ -6,6 +6,7 @@ const fetch = require("node-fetch");
 const DrivePermissionManager =
   require("../dist/drive-permission-manager/src/").default;
 app.use(express.static("public")); // For custom style sheet
+app.use(express.static("scripts")); // for custom typescript scripts
 app.use(express.urlencoded({ extended: true }))
 app.use(
   session({
@@ -75,7 +76,7 @@ passport.use(
 /* GENERAL ROUTE HANDLING */
 
 app.get("/", function (req, res) {
-  if(req.isAuthenticated()) res.redirect('/success');
+  if (req.isAuthenticated()) res.redirect('/success');
   else res.redirect('/login');
 });
 
@@ -110,7 +111,7 @@ app.get("/success", async (req, res) => {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
-      await client.initDb();
+      // await client.initDb();
       const fileList = await client.getFiles();
       res.render("index", { array: fileList || [] });
     } catch (e) {
@@ -163,14 +164,14 @@ app.post("/deletePermission", async (req, res) => {
       const { fileId, permissionId } = req.body;
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
-      try{
+      try {
         await client.deletePermission(fileId, permissionId);
       }
-      catch(error){
-        if(error.reason == "Failed to update db."){
-          res.sendStatus(500).json({fileId, permissionId, error})
+      catch (error) {
+        if (error.reason == "Failed to update db.") {
+          res.sendStatus(500).json({ fileId, permissionId, error })
         }
-        else res.sendStatus(400).json({fileId, permissionId, error})
+        else res.sendStatus(400).json({ fileId, permissionId, error })
       }
     }
     catch (e) {
@@ -189,7 +190,7 @@ app.post("/addPermission", async (req, res) => {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
       const resVal = [];
-      for(const email of emails){
+      for (const email of emails) {
         resVal.push(await client.addPermission(fileId, role, granteeType, email));
       }
       res.json(resVal);

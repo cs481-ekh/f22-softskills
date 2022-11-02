@@ -21,6 +21,5 @@
     "include": [
         "database/*/*",
         "drive-permission-manager/src/*",
-        "webserver/scripts/*"
     ]
 }
