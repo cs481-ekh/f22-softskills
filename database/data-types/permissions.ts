@@ -245,6 +245,25 @@ export class Permissions {
     }
 
     /**
+     * Reads an array of Permission objects given an array of IDs
+     * 
+     * @param ids Array of ids to read
+     * @param callback Callback function to execute
+     * @returns - Array of requested Permission objects
+     */
+    async readArray(ids: string[], callback?: Function): Promise<Permission[]> {
+        let permissionsOut: Permission[] = [];
+        for (let i = 0; i < ids.length; i++)
+            await this.read(ids[i]).then((permission: Permission) => {
+                if (permission)
+                    permissionsOut.push(permission);
+            });
+        if (callback)
+            callback(permissionsOut);
+        return Promise.resolve(permissionsOut);
+    }
+
+    /**
      * Get all permissions which contain the specified email address
      * 
      * @param email - Email to search for

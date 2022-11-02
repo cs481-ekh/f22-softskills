@@ -98,15 +98,8 @@ export class Files {
     async read(id: String, callback?: Function): Promise<File | undefined> {
         let file: File | undefined;
         await this.pool.query("SELECT * FROM Files WHERE ID LIKE '" + id + "';").then(async res => {
-            if (!res || !res.rows || res.rows.length == 0)
-                console.error("Error in files.read");
-            else {
-                let perms: Permission[] = [];
-                for (let i = 0; i < res.rows[0].permissions.length; i++) {
-                    let temp = await this.permissions.read(res.rows[0].permissions[i]);
-                    if (temp)
-                        perms.push(temp);
-                }
+            if (res && res.rows && res.rows.length > 0) {
+                let perms: Permission[] = await this.permissions.readArray(res.rows[0].permissions);
                 let owners: User[] = [];
                 for (let i = 0; i < res.rows[0].owners.length; i++) {
                     let temp = await this.users.read(res.rows[0].owners[i]);
@@ -373,11 +366,13 @@ export class Files {
     async readRootAndChildren(callback?: Function): Promise<File[]> {
         let filesOut: File[] = [];
         const res = await this.pool.query("SELECT * FROM Files WHERE PARENTS = '{}'");
+        // TODO: think about removing this
         if (!res || !res.rows || res.rows.length == 0) {
             console.error("Error in Files.readRoot or no files stored in root directory");
         } else {
             for (let r = 0; r < res.rows.length; r++) {
-                let file = res.rows[r];
+                let file: File = res.rows[r];
+                file.permissions = await this.permissions.readArray(res.rows[r].permissions);
                 let children: File[] = [];
                 for (let i = 0; i < file.children.length; i++) {
                     let child = file.children[i];

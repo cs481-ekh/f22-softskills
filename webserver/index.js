@@ -6,7 +6,7 @@ const fetch = require("node-fetch");
 const DrivePermissionManager =
   require("../dist/drive-permission-manager/src/").default;
 app.use(express.static("public")); // For custom style sheet
-app.use(express.urlencoded({extended:true}))
+app.use(express.urlencoded({ extended: true }))
 app.use(
   session({
     resave: true,
@@ -127,7 +127,7 @@ app.get("/getFiles", async (req, res) => {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
       let fileList;
-      if(req.query.fileIds) fileList = await client.getFiles([req.query.fileIds].flat())
+      if (req.query.fileIds) fileList = await client.getFiles([req.query.fileIds].flat())
       else fileList = await client.getFiles();
       res.json(fileList);
     } catch (e) {
@@ -135,7 +135,7 @@ app.get("/getFiles", async (req, res) => {
       console.log(e);
     }
   }
-  else{
+  else {
     res.redirect('/login');
   }
 });
