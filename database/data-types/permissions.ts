@@ -195,26 +195,17 @@ export class Permissions {
             query += "('" + permission.id + "', '" + permission.fileId
                 + "', '" + permission.type + "', '" + permission.role
                 + "', '" + permission.expirationDate
-                + "', '" + permission.deleted + "', '" + permission.pendingOwner
-                + "', '" + permission.user.emailAddress + "'), ";
+                + "', '" + (permission.deleted ? permission.deleted : false)
+                + "', '" + (permission.pendingOwner ? permission.pendingOwner
+                    : false) + "', '" + permission.user.emailAddress + "'), ";
             if (!users.some(u => u.emailAddress == permission.user.emailAddress))
                 users.push(permission.user);
         });
         query = query.slice(0, query.length - 2) + " ON CONFLICT(ID) DO NOTHING;";
-        await this.pool.query(query).then(async res => {
-            if (!res)
-                console.error("Error in permissions.populateTable");
-            else {
-                await this.users.populateTable(users).then(res => {
-                    if (!res)
-                        console.error("Error in Permissions.populateTable");
-                    else
-                        permissionsOut = permissions;
-                });
-            }
-            if (callback)
-                callback(permissionsOut);
-        });
+        await this.pool.query(query);
+        await this.users.populateTable(users);
+        if (callback)
+            callback(permissionsOut);
         return Promise.resolve(permissionsOut);
     }
 

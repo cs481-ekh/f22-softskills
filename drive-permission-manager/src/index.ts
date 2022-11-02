@@ -147,7 +147,8 @@ class DrivePermissionManager implements IDrivePermissionManager {
       if(parentCount){
         let parentIds = Array.from(parentToChildrenMap.keys())
         for(const file of fileList){
-          file.parents = file.parents.filter(parentId => !parentIds.includes(parentId))
+          if (file.parents)
+            file.parents = file.parents.filter(parentId => !parentIds.includes(parentId))
         }
       }
       // console.log(JSON.stringify(fileList))
