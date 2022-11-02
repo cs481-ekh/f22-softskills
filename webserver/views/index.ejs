@@ -139,6 +139,41 @@
 </style>
 
 <body>
+    <script>
+        function addPermission() {
+            let emails = document.getElementById('emailTextEntry').value;
+            let permission = document.getElementById('inputState').value;
+            let fileIds = Array.from(document.querySelectorAll("input[type=checkbox]:checked"));
+            let fileIdArray = [];
+            let emailArray = emails.split('\n');
+
+            document.getElementById('emailTextEntry').value = '';
+            document.getElementById('inputState').value = 'choose...';
+
+            for (let i = 0; i < fileIds.length; i++) {
+                fileIdArray.push(fileIds[i].name)
+            }
+
+            const addPost = async (fileId, role, granteeType, emails) => {
+                const url = `/addPermission`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fileId: fileIdArray,
+                        role: role,
+                        granteeType: granteeType,
+                        emails: emailArray
+                    })
+                });
+                if (response.status !== 200) {
+                    throw new Error('Error setting permission');
+                }
+            }
+        }
+    </script>
     <div class="jumbotron text-center">
         <Header>
             <h1>Welcome to Drive Permission Manager</h1>
@@ -183,8 +218,9 @@
                     </div>
                 </div>
             </div>
-        </div
-        <p id='list'></p>
+        </div>
+        <p id='list'>
+        </p>
         <script type="text/JavaScript">
             const files = JSON.parse(`<%- JSON.stringify(array)%>`);
             </script>
