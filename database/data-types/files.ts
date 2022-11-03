@@ -252,7 +252,7 @@ export class Files {
      * @param callback - Callback function to execute
      * @returns - Array of original file and all files underneath it
      */
-    private async getFileAndSubtree(fileId: string, callback?: Function): Promise<File[]> {
+    async getFileAndSubtree(fileId: string, callback?: Function): Promise<File[]> {
         const idStack: string[] = [fileId];
         const filesOut: File[] = [];
         while (idStack.length > 0) {

@@ -115,7 +115,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
           fileList.push(file);
           // Establish who its parents are and if this file has parents add this fileId
           if (file.parents && file.parents.length) {
-            
+
             for (const parentId of file.parents) {
               const children = parentToChildrenMap.get(parentId);
               if (children) {
@@ -144,18 +144,18 @@ class DrivePermissionManager implements IDrivePermissionManager {
         } else break;
       }
       // If parent count is still > 0 then that means that the parent file wasn't present so remove
-      if(parentCount){
+      if (parentCount) {
         let parentIds = Array.from(parentToChildrenMap.keys())
-        for(const file of fileList){
+        for (const file of fileList) {
           if (file.parents)
             file.parents = file.parents.filter(parentId => !parentIds.includes(parentId))
         }
       }
       // console.log(JSON.stringify(fileList))
-      try{
+      try {
         await this.db.files.populateTable(fileList);
       }
-      catch(e){
+      catch (e) {
         console.log('Problem populating table', e);
       }
 
@@ -165,11 +165,11 @@ class DrivePermissionManager implements IDrivePermissionManager {
     // console.log("<-----------------------------")
   }
   async getFiles(fileIds?: string[]): Promise<File[]> {
-    try{
+    try {
       let files: File[] = [];
-      if(fileIds && fileIds.length){
+      if (fileIds && fileIds.length) {
         files = await this.db.files.readArray(fileIds);
-        if(!files || files.length != fileIds.length){
+        if (!files || files.length != fileIds.length) {
           return Promise.reject({
             fileIds,
             files,
@@ -178,12 +178,12 @@ class DrivePermissionManager implements IDrivePermissionManager {
           })
         }
       }
-      else{
-        files = await this.db.files.readRootAndChildren(); 
+      else {
+        files = await this.db.files.readRootAndChildren();
       }
       return Promise.resolve(files);
     }
-    catch(e){
+    catch (e) {
       return Promise.reject({
         fileIds,
         reason: `Error: Failed to read files from db...\n${e}`
@@ -268,6 +268,105 @@ class DrivePermissionManager implements IDrivePermissionManager {
         });
       });
     }
+  }
+
+  async addPermissions(fileIds: string[], role: Role, type: GranteeType, emails: string[]): Promise<File[]> {
+    // ensure emails are valid
+    if (emails.some(email => email.indexOf("@") < 0))
+      return Promise.reject({
+        fileIds,
+        role,
+        type,
+        emails,
+        reason: "Invalid email format"
+      });
+    // ensure role is valid
+    if (![
+      "owner",
+      "organizer",
+      "fileOrganizer",
+      "writer",
+      "commenter",
+      "reader",
+    ].includes(role))
+      return Promise.reject({
+        fileIds,
+        role,
+        type,
+        emails,
+        reason: "Invalid role"
+      });
+    // ensure type is valid
+    if (!["user", "group", "domain", "anyone"].includes(type))
+      return Promise.reject({
+        fileIds,
+        role,
+        type,
+        emails,
+        reason: "Invalid grantee type"
+      });
+    // ensure files exist
+    const requestedFiles: File[] = await this.db.files.readArray(fileIds);
+    if (!requestedFiles || requestedFiles.length !== fileIds.length)
+      return Promise.reject({
+        fileIds,
+        role,
+        type,
+        emails,
+        reason: "File not found in database"
+      });
+    // get all files to modify
+    let filesToUpdate: File[] = [];
+    for (let i = 0; i < requestedFiles.length; i++)
+      if (!filesToUpdate.some(f => f.id == requestedFiles[i].id))
+        filesToUpdate = filesToUpdate.concat(await this.db.files.getFileAndSubtree(requestedFiles[i].id));
+    // modify and update each file/permission
+    try {
+      for (let i = 0; i < filesToUpdate.length; i++) {
+        for (let j = 0; j < emails.length; j++) {
+          const res = await this.drive.permissions.create({
+            fileId: filesToUpdate[i].id,
+            fields: "*",
+            requestBody: {
+              role,
+              type,
+              emailAddress: emails[j]
+            }
+          });
+          let permission: Permission = {
+            id: res.data.id,
+            fileId: filesToUpdate[i].id,
+            type: res.data.type,
+            role: res.data.role,
+            deleted: res.data.deleted,
+            pendingOwner: res.data.pendingOwner,
+            user: {
+              displayName: res.data.displayName,
+              emailAddress: res.data.emailAddress,
+              photoLink: res.data.photoLink,
+            },
+          };
+          filesToUpdate[i] = await this.db.files.createPermission(filesToUpdate[i], permission);
+          if (!filesToUpdate[i])
+            return Promise.reject({
+              fileIds,
+              role,
+              type,
+              emails,
+              reason: "There was a problem saving the changes in the database."
+            });
+        }
+      }
+    } catch (e) {
+      return Promise.reject({
+        fileIds,
+        role,
+        type,
+        emails,
+        reason: "Drive API request failed or was rejected:\n" + e
+      });
+    }
+    return Promise.resolve(filesToUpdate);
   }
 
   async addPermission(fileId: string, role: Role, type: GranteeType, s?: string): Promise<Permission> {
@@ -388,21 +487,21 @@ class DrivePermissionManager implements IDrivePermissionManager {
       });
     }
   }
-//   async getDrives(): Promise<any[]> {
-//     try{
-//       let retVal: any[] = [];
-//       const res = await this.drive.drives.list();
-//       for(const drive of res.data.drives){
-//         console.log('ID OF DRIVE: ' + drive.id);
-//         retVal.push(drive.id);
-//       }
-//       console.log("LIST OF DRIVES: " + retVal)
-//       return Promise.resolve(retVal);
-//     }
-//     catch(e){
-//       return Promise.reject(e)
-//     }
-//   }
+  //   async getDrives(): Promise<any[]> {
+  //     try{
+  //       let retVal: any[] = [];
+  //       const res = await this.drive.drives.list();
+  //       for(const drive of res.data.drives){
+  //         console.log('ID OF DRIVE: ' + drive.id);
+  //         retVal.push(drive.id);
+  //       }
+  //       console.log("LIST OF DRIVES: " + retVal)
+  //       return Promise.resolve(retVal);
+  //     }
+  //     catch(e){
+  //       return Promise.reject(e)
+  //     }
+  //   }
 }
 
 export default DrivePermissionManager;
