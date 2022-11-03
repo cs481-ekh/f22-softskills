@@ -1,6 +1,6 @@
 body {
     background: #FFFFFF;
-    padding: 0px 24px;
+    padding: 10px 10px 10px 10px;
     height: 100vh;
     justify-content: left;
     align-items: center;
@@ -8,6 +8,8 @@ body {
 }
 
 .button {
+    display: flex;
+    justify-content: space-between;
     min-width: 100%;
     min-height: 40px;
     width: 60%;
@@ -17,8 +19,17 @@ body {
     border-radius: 6px;
     box-shadow: #5DA7DE 0px 50px 100px -20px, #5DA7DE 0px 30px 60px -30px, #5DA7DE 0px -2px 6px 0px inset;
     text-align: left;
+    padding-top: 1%;
+    padding-left: 2%;
+    padding-right: 2%;
     font-family: 'product_sansregular', sans-serif;
     font-size: 23px;
+}
+
+.checkbox {
+    display: flex;
+    min-width: 5%;
+    min-height: 35px;
 }
 
 .button:hover {
@@ -29,71 +40,93 @@ body {
 .boxDiv {
     align-items: left;
     width: 100%;
+    border-style: double;
 }
 
 .parent {
     margin: 5px;
-    width: 67%;
+    width: 60%;
 }
 
 .child {
     margin: 5px 5px 5px 30px;
+    width: 100%;
 }
 
 .enum-pane {
-
     border-style: double;
     border-color: black;
     float: left;
-
     margin-left: auto;
     margin-right: auto;
     margin-top: auto;
     margin-bottom: auto;
-
-    width: 60%;
-
-
+    width: 66.66%;
+    height: 100%;
+    overflow-y: scroll;
 }
 
 .preview-pane {
-
     float: right;
-
     margin-left: auto;
     margin-right: auto;
     margin-top: auto;
     margin-bottom: auto;
-
-    padding: 10px 10px 10px 10px;
-
-    box-shadow: 4px 10px 5px 0px rgba(0, 0, 0, 0.75);
+    border-style: double;
+    text-align: center;
     font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
-    color: whitesmoke;
-    text-indent: 5%;
-    background-color: teal;
+    color: black;
+    background-color: white;
     width: 33.33%;
-
+    height: 100%;
+    overflow-y: scroll;
 }
 
-.access-top{
+.access-top {
     margin-left: auto;
     margin-right: auto;
     margin-top: auto;
     margin-bottom: auto;
-
     background-color: silver;
-    text-indent: 5%;
-    color: whitesmoke;
+    text-align: left;
+    color: black;
+    border-style: double;
+    font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+    font-weight: lighter;
 }
 
-.owner{
+.owner {
     margin-left: auto;
     margin-right: auto;
     margin-top: auto;
     margin-bottom: auto;
-
     background-color: salmon;
     text-indent: 5%;
     color: whitesmoke;
+}
+
+.selected-preview {
+    background-color: gray;
+    height: 100%;
+    text-align: center;
+    font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
+    color: whitesmoke
+}
+
+.file-counter {
+    padding: 10px 10px 10px 10px;
+}
+
+.add {
+    border-style: double;
+    border-width: 3px;
+    width: 50%;
+    float: left
+}
+
+.remove {
+    border-style: double;
+    border-width: 3px;
+    width: 50%;
+    float: right
 }
