@@ -21,13 +21,15 @@ async function getGrandchildren(fileId) {
         if (files.some(f => f.id == grandchildren[i]))
             grandchildren.splice(i--, 1);
     if (!grandchildren || grandchildren.length == 0)
-        return [];
+        return Promise.resolve([]);
     const res = await axios.get('/getFiles', {
         params: {
             fileIds: grandchildren
         }
     });
     if (res)
-        return res.data;
-    return [];
+        return Promise.resolve(res.data);
+    return Promise.resolve([]);
 }
+
+// async function removePermission
