@@ -202,6 +202,73 @@ export class Files {
     }
 
     /**
+     * Given the id of a file, deletes all permissions associated with specified
+     * file, or any file nested underneath it
+     * 
+     * @param fileId - Id of root file
+     * @param callback - Callback function to execute
+     * @returns - True if permissions were stripped, false otherwise
+     */
+    async stripAllPermissions(fileId: string, callback?: Function): Promise<boolean> {
+        const filesToStrip: File[] = await this.getFileAndSubtree(fileId);
+        // if file is invalid
+        if (filesToStrip.length == 0) {
+            if (callback)
+                callback(false);
+            return Promise.resolve(false);
+        }
+        // if no files have any permissions
+        if (!filesToStrip.some(file => file.permissions && file.permissions.length > 0)) {
+            if (callback)
+                callback(true);
+            return Promise.resolve(true);
+        }
+        // delete permissions
+        let permissionsToDelete: Permission[] = [];
+        filesToStrip.forEach(file => {
+            if (file.permissions)
+                permissionsToDelete = permissionsToDelete.concat(file.permissions);
+        });
+        let query = "DELETE FROM Permissions WHERE id IN ('";
+        permissionsToDelete.forEach(permission => {
+            query += permission.id + "', '";
+        });
+        query = query.slice(0, query.length - 3) + ");";
+        await this.pool.query(query);
+        // delete permissions from files
+        query = "UPDATE Files SET PERMISSIONS = '{}' WHERE ID IN ('";
+        filesToStrip.forEach(file => query += file.id + "', '");
+        query = query.slice(0, query.length - 3) + ");";
+        await this.pool.query(query);
+        if (callback)
+            callback(true);
+        return Promise.resolve(true);
+    }
+
+    /**
+     * Given the id of a file, returns the file object and all files nested under it
+     * 
+     * @param fileId - Id of top file
+     * @param callback - Callback function to execute
+     * @returns - Array of original file and all files underneath it
+     */
+    private async getFileAndSubtree(fileId: string, callback?: Function): Promise<File[]> {
+        const idStack: string[] = [fileId];
+        const filesOut: File[] = [];
+        while (idStack.length > 0) {
+            let res = await this.read(idStack.pop());
+            if (res) {
+                filesOut.push(res);
+                res.children.forEach(child => {
+                    if (typeof child == "string")
+                        idStack.push(child);
+                });
+            }
+        }
+        return Promise.resolve(filesOut);
+    }
+
+    /**
      * Deletes the specified file and its children. Returns
      * the deleted file object, or undefined if the query was unsuccessful.
      * 
