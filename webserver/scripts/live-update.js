@@ -26,10 +26,21 @@ async function getGrandchildren(fileId) {
         params: {
             fileIds: grandchildren
         }
-    });
+    }).catch(err => console.error("ERROR", err));
     if (res)
         return Promise.resolve(res.data);
     return Promise.resolve([]);
 }
 
-// async function removePermission
+async function removePermissions(fileIds) {
+    if (!fileIds || fileIds.length == 0)
+        return Promise.resolve([]);
+    const res = await axios.get('/removePermissions', {
+        params: {
+            fileIds: fileIds
+        }
+    }).catch(err => console.error("ERROR", err));
+    if (res)
+        return Promise.resolve(res.data);
+    return Promise.resolve([]);
+}

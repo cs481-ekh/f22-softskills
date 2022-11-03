@@ -36,6 +36,7 @@
             }
 
             const addPost = async (fileId, role, granteeType, emails) => {
+                // TODO: add axios here
                 const url = `/addPermission`;
                 const response = await fetch(url, {
                     method: 'POST',
