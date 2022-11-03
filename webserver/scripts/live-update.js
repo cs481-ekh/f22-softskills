@@ -1,18 +1,12 @@
-function getFiles() {
-    axios.get('/getFiles', {
-        params: {
-            fileIds: [
-                files[0].id,
-                files[1].id
-            ]
-        }
-    }).then(res => {
-        console.log(res);
-    }).catch(err => {
-        console.error(err);
-    });
-}
-
+/**
+ * Given the id of a file, returns and array of the file's
+ * grandchildren. Used to preload grandchildren files while
+ * user is browsing files and to avoid loading user's entire
+ * Google Drive at once.
+ * 
+ * @param {string} fileId - Id of file whose grandchildren to get
+ * @returns - Array of grandchildren files
+ */
 async function getGrandchildren(fileId) {
     const file = files.find(f => f.id == fileId);
     if (!file || !file.children || file.children.length == 0)
