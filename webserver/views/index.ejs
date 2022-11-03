@@ -140,6 +140,27 @@
                 </div>
             </div>
         </div>
+        <button type="button" onclick="getCheckBoxCounter()" class="btn btn-primary remove" data-toggle="modal"
+            data-target="#myModal2">Remove</button>
+        <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" data-backdrop="true" data-keyboard="true"
+            aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="myModalLabel">Remove Permission(s)</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <h1 id="areSure">Are you sure?</h1>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="removePermission()"
+                            data-dismiss="modal">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <p id='list'>
         </p>
         <script type="text/JavaScript">
@@ -231,11 +252,39 @@
             }
             // Add the root parent folders to the root container to start
             const box = document.getElementById('box');
+            const setPermission = async (fileId, permissionId) => {
+                const url = `/deletePermission`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fileId: fileId,
+                        permissionId: permissionId
+                    })
+                });
+                if (response.status !== 200) {
+                    throw new Error('Error setting permission');
+                }
+            }
+
+            function removePermission() {
+                const checkBoxes = document.getElementsByClassName('checkbox');
+                const isChecked = Array.from(checkBoxes).filter((checkbox) => checkbox.checked);
+                isChecked.forEach((file) => {
+                    const fileId = file.parentNode.parentNode.id;
+                    const permissionIds = (files.find((file) => file.id === fileId).permissions || []).map((permission) => permission.id);
+                    permissionIds.forEach((permissionId) => {
+                        setPermission(fileId, permissionId);
+                    });
+                });
+            }
             rootParents.forEach((parent) => {
                 box.appendChild(createButton(parent, ['parent']));
             });
         </script>
-        
+
     </div>
 </body>
 
