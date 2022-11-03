@@ -111,7 +111,7 @@ app.get("/success", async (req, res) => {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
-      // await client.initDb();
+      await client.initDb();
       const fileList = await client.getFiles();
       res.render("index", { array: fileList || [] });
     } catch (e) {
