@@ -77,9 +77,9 @@ export class Permissions {
         let permOut: Permission | undefined;
         await this.pool.query("SELECT * FROM Permissions WHERE ID LIKE '"
             + id + "';").then(async res => {
-                if (!res || !res.rows || res.rows.length == 0)
-                    console.error("Error in permissions.read");
-                else {
+                if (!res || !res.rows || res.rows.length == 0) {
+                    // console.error("Error in permissions.read");
+                } else {
                     let user = await this.users.read(res.rows[0].grantee_user);
                     if (user)
                         permOut = {

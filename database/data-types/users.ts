@@ -57,9 +57,9 @@ export class Users {
     async read(email: String, callback?: Function): Promise<User | undefined> {
         let user: User | undefined;
         await this.pool.query("SELECT * FROM Users WHERE EMAIL LIKE '" + email + "';").then(res => {
-            if (!res || !res.rows || res.rows.length == 0)
-                console.error("Error in users.read");
-            else
+            if (!res || !res.rows || res.rows.length == 0) {
+                // console.error("Error in users.read");
+            } else
                 user = {
                     emailAddress: res.rows[0].email,
                     displayName: res.rows[0].display_name,
