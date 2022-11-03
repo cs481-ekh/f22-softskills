@@ -12,17 +12,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"
         integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
         crossorigin="anonymous"></script>
-    <script src="../../dist/webserver/scripts/live-update.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
         integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
         crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
-
-
-
 <body>
     <script>
         function addPermission() {
@@ -185,6 +181,7 @@
                 event.stopPropagation();
                 // Select the button's parent (button container) and all its children nodes
                 const fileId = event.target.parentNode.id;
+                getGrandchildren(fileId).then(res => res.forEach(f => files.push(f)));
                 preview(files, fileId);
                 const buttonContainer = document.getElementById(fileId);
                 const containerNodes = buttonContainer.children;
@@ -285,6 +282,7 @@
                 box.appendChild(createButton(parent, ['parent']));
             });
         </script>
+        <script src="live-update.js"></script>
 
     </div>
 </body>

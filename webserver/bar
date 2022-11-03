@@ -1,4 +1,0 @@
-cd ..
-tsc
-cd webserver
-node index.js
