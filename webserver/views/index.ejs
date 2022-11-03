@@ -181,6 +181,7 @@
                 event.stopPropagation();
                 // Select the button's parent (button container) and all its children nodes
                 const fileId = event.target.parentNode.id;
+                // Preload grandchildren from server on click
                 getGrandchildren(fileId).then(res => res.forEach(f => files.push(f)));
                 preview(files, fileId);
                 const buttonContainer = document.getElementById(fileId);
