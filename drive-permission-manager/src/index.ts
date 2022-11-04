@@ -47,13 +47,14 @@ class DrivePermissionManager implements IDrivePermissionManager {
     this.db = new Postgres();
   }
   async initDb() {
-    // console.log("In initDb() ------------------->")
-    // const fileList: File[] = await this.getFiles(); // Get files from Google Drive
+    console.log("Clearing any pre-existing data from db...")
+    await this.db.dropTables();
     let fileList: File[] = [];
     try {
       await this.db.initTables(); // Init db
       var parentToChildrenMap = new Map();
       let NextPageToken = "";
+      console.log(`Pulling Drive data using ${process.env.GDRIVE_EMAIL} ....`);
       do {
         const params = {
           pageToken: NextPageToken || "",
@@ -115,7 +116,6 @@ class DrivePermissionManager implements IDrivePermissionManager {
           fileList.push(file);
           // Establish who its parents are and if this file has parents add this fileId
           if (file.parents && file.parents.length) {
-            
             for (const parentId of file.parents) {
               const children = parentToChildrenMap.get(parentId);
               if (children) {
@@ -154,6 +154,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
       // console.log(JSON.stringify(fileList))
       try{
         await this.db.files.populateTable(fileList);
+        console.log(`Database initialization complete.` )
       }
       catch(e){
         console.log('Problem populating table', e);
