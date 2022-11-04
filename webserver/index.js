@@ -78,6 +78,13 @@ const checkForInit = async (req, res, next) => {
         // Its not the right google drive account / email so redirect and let them know
         res.redirect("/login?error=user-email-does-not-match-expected-initialization-email");
       }
+      else{
+        setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
+        const client = new DrivePermissionManager(oauth2Client);
+        await client.initDb();
+        dbInitialized = true;
+        next();
+      }
     }
     // Db already initialized and the user is authenticated so continue on with the request
     else{
@@ -90,7 +97,7 @@ const checkForInit = async (req, res, next) => {
 }
 
 /* GENERAL ROUTE HANDLING */
-app.get("/", function (req, res) {
+app.get("/", checkForInit, function (req, res) {
   if (req.isAuthenticated()) res.redirect('/success');
   else res.redirect('/login');
 });
@@ -121,7 +128,7 @@ app.get("/error", (req, res) => res.send("error logging in"));
 /*  API CORE ROUTE HANDLING  */
 
 // post login
-app.get("/success", async (req, res) => {
+app.get("/success", checkForInit, async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
@@ -136,7 +143,7 @@ app.get("/success", async (req, res) => {
 });
 
 // getFiles
-app.get("/getFiles", async (req, res) => {
+app.get("/getFiles", checkForInit, async (req, res) => {
   if (req.isAuthenticated()) {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
@@ -156,7 +163,7 @@ app.get("/getFiles", async (req, res) => {
 });
 
 // getPermissions
-app.get("/getPermissions", async (req, res) => {
+app.get("/getPermissions", checkForInit, async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
@@ -172,7 +179,7 @@ app.get("/getPermissions", async (req, res) => {
 });
 
 // deletePermissions
-app.post("/deletePermission", async (req, res) => {
+app.post("/deletePermission", checkForInit, async (req, res) => {
   if (req.isAuthenticated() && req.user && req.user.accessToken) {
     try {
       const { fileId, permissionId } = req.body;
@@ -197,7 +204,7 @@ app.post("/deletePermission", async (req, res) => {
 });
 
 // addPermissions
-app.post("/addPermission", async (req, res) => {
+app.post("/addPermission", checkForInit, async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
       const { fileId, role, granteeType, emails } = req.body;
