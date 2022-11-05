@@ -1,27 +1,25 @@
 require('dotenv').config();
-
+const DrivePermissionManager = require("../dist/drive-permission-manager/src/").default;
 /* Express Configuration */
+const port = process.env.PORT || 3000;
 const express = require("express");
 const app = express();
 const session = require("express-session");
-const DrivePermissionManager =
-  require("../dist/drive-permission-manager/src/").default;
 app.use(express.static("public")); // For custom style sheet
 app.use(express.static("scripts")); // for custom typescript scripts
 app.use(express.urlencoded({ extended: true }))
+app.use(express.json())
+
+/*  PASSPORT SETUP  */
+process.env.PASSPORT_SESSION_SECRET = require('crypto').randomBytes(32).toString('hex');
 app.use(
   session({
     resave: true,
     saveUninitialized: true,
-    secret: "SECRET",
+    secret: process.env.PASSPORT_SESSION_SECRET,
   })
 );
-app.use(express.json())
-const port = 3000;
-
-/*  PASSPORT SETUP  */
 const passport = require("passport");
-var userProfile;
 app.use(passport.initialize());
 app.use(passport.session());
 app.set("view engine", "ejs");
@@ -33,10 +31,9 @@ passport.deserializeUser(function (obj, cb) {
 });
 
 /*  Google AUTH  */
-const GOOGLE_CLIENT_ID =
-  "480000320991-3h6eq67pprqjk6so5m5ajmgvls8b5sbe.apps.googleusercontent.com";
-const GOOGLE_CLIENT_SECRET = "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";
-const GOOGLE_API_KEY = "AIzaSyBBPLkIsanFxwBIKSwhi9bVGd9okmYFs4o";
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const { authenticate } = require("@google-cloud/local-auth");
 var { google } = require("googleapis"),
   OAuth2 = google.auth.OAuth2;
@@ -45,13 +42,14 @@ var oauth2Client = new OAuth2(
   GOOGLE_CLIENT_SECRET,
   "http://localhost:3000/auth/google/callback"
 );
-const GoogleStrategy = require("passport-google-oauth").OAuth2Strategy;
+
 const setOauth2ClientCredentials = (accessToken, refreshToken) => {
   oauth2Client.credentials = {
     access_token: accessToken,
     refresh_token: refreshToken,
   };
 };
+const GoogleStrategy = require("passport-google-oauth").OAuth2Strategy;
 passport.use(
   new GoogleStrategy(
     {
@@ -67,6 +65,7 @@ passport.use(
     }
   )
 );
+
 /* Middleware function for checking authentication / db initialization */
 let dbInitialized = false;
 const checkForInit = async (req, res, next) => {
