@@ -65,7 +65,6 @@ passport.use(
     }
   )
 );
-
 /* Middleware function for checking authentication / db initialization */
 let dbInitialized = false;
 const checkForInit = async (req, res, next) => {
@@ -95,6 +94,34 @@ const checkForInit = async (req, res, next) => {
   }
 }
 
+/* Middleware function for checking authentication / db initialization */
+let dbInitialized = false;
+const checkForInit = async (req, res, next) => {
+  // Check if user is authenticated to make any request
+  if(req.isAuthenticated()){
+    if( !dbInitialized ){
+      // Determine if this is the user account to populate the db with
+      if(req.user._json.email != process.env.GDRIVE_EMAIL){
+        // Its not the right google drive account / email so redirect and let them know
+        res.redirect("/login?error=user-email-does-not-match-expected-initialization-email");
+      }
+      else{
+        setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
+        const client = new DrivePermissionManager(oauth2Client);
+        await client.initDb();
+        dbInitialized = true;
+        next();
+      }
+    }
+    // Db already initialized and the user is authenticated so continue on with the request
+    else{
+      next();
+    }
+  }
+  else{ // Failed to authenticate the request so redirect to login route
+    res.redirect('/login');
+  }
+}
 /* GENERAL ROUTE HANDLING */
 app.get("/", checkForInit, function (req, res) {
   if (req.isAuthenticated()) res.redirect('/success');
