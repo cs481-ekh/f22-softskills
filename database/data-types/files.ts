@@ -157,6 +157,7 @@ export class Files {
     /**
      * Creates the given permission which references the given file. Returns the
      * updated file object, or undefined if unsuccessful.
+     * SHOULDN'T BE USED - use Permissions.create and Files.update instead
      * 
      * @param file - File object to update
      * @param permission - Permission object to create
@@ -166,7 +167,7 @@ export class Files {
     async createPermission(file: File, permission: Permission, callback?: Function): Promise<File | undefined> {
         if (file.id != permission.fileId) {
             console.error("File.createPermission - file.id != permission.fileId");
-            return undefined;
+            return Promise.resolve(undefined);
         }
         const p = await this.permissions.create(permission);
         if (!p) {
@@ -189,7 +190,6 @@ export class Files {
      * @returns - Updated file object
      */
     async deletePermission(file: File, pid: string, callback?: Function): Promise<File | undefined> {
-        await this.permissions.delete(pid);
         for (let i = 0; i < file.permissions.length; i++)
             if (file.permissions[i].id == pid) {
                 file.permissions.splice(i, 1);
@@ -223,20 +223,8 @@ export class Files {
                 callback(true);
             return Promise.resolve(true);
         }
-        // delete permissions
-        let permissionsToDelete: Permission[] = [];
-        filesToStrip.forEach(file => {
-            if (file.permissions)
-                permissionsToDelete = permissionsToDelete.concat(file.permissions);
-        });
-        let query = "DELETE FROM Permissions WHERE id IN ('";
-        permissionsToDelete.forEach(permission => {
-            query += permission.id + "', '";
-        });
-        query = query.slice(0, query.length - 3) + ");";
-        await this.pool.query(query);
-        // delete permissions from files
-        query = "UPDATE Files SET PERMISSIONS = '{}' WHERE ID IN ('";
+        // remove permissions from all files
+        let query = "UPDATE Files SET PERMISSIONS = '{}' WHERE ID IN ('";
         filesToStrip.forEach(file => query += file.id + "', '");
         query = query.slice(0, query.length - 3) + ");";
         await this.pool.query(query);
@@ -252,9 +240,9 @@ export class Files {
      * @param callback - Callback function to execute
      * @returns - Array of original file and all files underneath it
      */
-    private async getFileAndSubtree(fileId: string, callback?: Function): Promise<File[]> {
+    async getFileAndSubtree(fileId: string, callback?: Function): Promise<File[]> {
         const idStack: string[] = [fileId];
-        const filesOut: File[] = [];
+        let filesOut: File[] = [];
         while (idStack.length > 0) {
             let res = await this.read(idStack.pop());
             if (res) {
@@ -265,6 +253,8 @@ export class Files {
                 });
             }
         }
+        if (callback)
+            callback(filesOut);
         return Promise.resolve(filesOut);
     }
 
@@ -285,10 +275,8 @@ export class Files {
                 let perms: Permission[] = [];
                 for (let i = 0; i < res.rows.length; i++) {
                     let temp = await this.permissions.read(res.rows[0].permissions[i]);
-                    if (temp) {
+                    if (temp)
                         perms.push(temp);
-                        await this.permissions.delete(temp.id);
-                    }
                 }
                 let owners: User[] = [];
                 for (let i = 0; i < res.rows[0].owners.length; i++) {

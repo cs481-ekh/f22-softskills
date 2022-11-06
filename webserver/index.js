@@ -250,6 +250,22 @@ app.post("/addPermission", checkForInit, async (req, res) => {
   else res.sendStatus(401);
 });
 
+// returns array of updated file objects
+app.post("/addPermissions", async (req, res) => {
+  if (req.user && req.user.accessToken) {
+    try {
+      const { fileIds, role, granteeType, emails } = req.body;
+      setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
+      const dpmRes = await new DrivePermissionManager(oauth2Client).addPermissions(fileIds, role, granteeType, emails);
+      res.json(dpmRes);
+    } catch (e) {
+      res.json(e);
+      console.error("ERROR", e);
+    }
+  } else
+    res.sendStatus(401);
+});
+
 app.get('*', (req, res) => res.send(`<h1>404</h1><image src="https://thumbs.gfycat.com/AccurateUnfinishedBergerpicard-size_restricted.gif">`));
 
 app.listen(port, async () => {
