@@ -65,9 +65,9 @@ passport.use(
     }
   )
 );
+let dbInitialized = false;
 /* Middleware function for checking authentication / db initialization */
 const checkForInit = async (req, res, next) => {
-  let dbInitialized = false;
   // Check if user is authenticated to make any request
   if (req.isAuthenticated()) {
     if (!dbInitialized) {

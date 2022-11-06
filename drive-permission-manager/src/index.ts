@@ -165,7 +165,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
       // console.log(JSON.stringify(fileList))
       try {
         await this.db.files.populateTable(fileList);
-        console.log(`Database initialization complete.` )
+        console.log(`Database initialization complete.`)
       }
       catch (e) {
         console.log('Problem populating table', e);
@@ -410,6 +410,8 @@ class DrivePermissionManager implements IDrivePermissionManager {
             });
         }
       }
+      filesToUpdate = [];
+      trees.forEach(tree => filesToUpdate = filesToUpdate.concat(tree));
     } catch (e) {
       return Promise.reject({
         fileIds,

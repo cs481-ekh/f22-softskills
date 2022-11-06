@@ -76,3 +76,21 @@ async function testFolder() {
         return Promise.resolve(res.data);
     return Promise.resolve(res);
 }
+
+/**
+ * Sends a request to the server to add new permissions
+ * for the given files and users
+ * 
+ * @param {string[]} fileIds - Array of file ids to add permissions to
+ * @param {string} role - Role of the permissions to add
+ * @param {string} granteeType - Type of recipient of permissions
+ * @param {string[]} emails - Array of emails to add permissions to
+ * @returns - Array of files with updated permissions
+ */
+async function requestAddPermissions(fileIds, role, granteeType, emails) {
+    const params = { fileIds, role, granteeType, emails };
+    const res = await axios.post('/addPermissions', params);
+    if (res && res.data)
+        return Promise.resolve(res.data);
+    return Promise.reject(res);
+}
