@@ -315,11 +315,26 @@ class DrivePermissionManager implements IDrivePermissionManager {
         emails,
         reason: "File not found in database"
       });
+    // TODO: minimize requestedFiles
+    // TODO: only update file entries and create one permission
     // get all files to modify
     let filesToUpdate: File[] = [];
     for (let i = 0; i < requestedFiles.length; i++)
       if (!filesToUpdate.some(f => f.id == requestedFiles[i].id))
         filesToUpdate = filesToUpdate.concat(await this.db.files.getFileAndSubtree(requestedFiles[i].id));
+    // get array of parent files
+    let parentFiles: File[] = [];
+    filesToUpdate.forEach(file => {
+      if (!file.parents || file.parents.length == 0)
+        parentFiles.push(file);
+      if (!filesToUpdate.some(f => f.id == file.parents[0]))
+        parentFiles.push(file);
+    });
+    // TODO: only modify parentFiles with google drive api, then modify all filesToUpdate in db
+    // QUESTION: how to remove permission?
+    // QUESTION: if i share a folder, then remove the share from a child, what happens?
+    // ANSWER: permission is removed from child only
+    // will need to do some serious reworking that idk if i have time for to meet the initial deadline
     // modify and update each file/permission
     try {
       for (let i = 0; i < filesToUpdate.length; i++) {
@@ -333,6 +348,10 @@ class DrivePermissionManager implements IDrivePermissionManager {
               emailAddress: emails[j]
             }
           });
+          if (filesToUpdate[i].name !== "CS-HU 130")
+            continue;
+          if (filesToUpdate[i].name == "CS-HU 130")
+            console.log(res.data);
           let permission: Permission = {
             id: res.data.id,
             fileId: filesToUpdate[i].id,

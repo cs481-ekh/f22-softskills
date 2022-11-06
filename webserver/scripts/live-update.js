@@ -34,6 +34,45 @@ async function getGrandchildren(fileId) {
         }
     });
     if (res)
-        return res.data;
-    return [];
+        return Promise.resolve(res.data);
+    return Promise.resolve([]);
+}
+
+async function testFiles() {
+    const params = {
+        fileIds: [
+            "1NVaiPgW70cvOOHu7dQWlpYC9y_upuKqqfa3LHi1YVN4",
+            "1GRX6cTr0LeWCPh9RRCVIZjoWtAhOL8lwQqeXWqm_EZg"
+        ],
+        role: "reader",
+        granteeType: "user",
+        emails: [
+            "pb4000231@gmail.com"
+        ]
+    };
+    const res = await axios.post('/addPermissions', params);
+    console.log("res", res);
+    console.log("res.data", res.data);
+    if (res)
+        return Promise.resolve(res.data);
+    return Promise.resolve(res);
+}
+
+async function testFolder() {
+    const params = {
+        fileIds: [
+            "1MqXS-fkiU1rFkkQhOSlHqWiL5KIlBqOA"
+        ],
+        role: "reader",
+        granteeType: "user",
+        emails: [
+            "pb4000231@gmail.com"
+        ]
+    };
+    const res = await axios.post('/addPermissions', params);
+    console.log("res", res);
+    console.log("res.data", res.data);
+    if (res)
+        return Promise.resolve(res.data);
+    return Promise.resolve(res);
 }
