@@ -1,8 +1,9 @@
 require('dotenv').config();
+
+/* Express Configuration */
 const express = require("express");
 const app = express();
 const session = require("express-session");
-const fetch = require("node-fetch");
 const DrivePermissionManager =
   require("../dist/drive-permission-manager/src/").default;
 app.use(express.static("public")); // For custom style sheet
@@ -16,14 +17,9 @@ app.use(
   })
 );
 app.use(express.json())
-
 const port = 3000;
-async function startup() {
-
-}
 
 /*  PASSPORT SETUP  */
-
 const passport = require("passport");
 var userProfile;
 app.use(passport.initialize());
@@ -37,7 +33,6 @@ passport.deserializeUser(function (obj, cb) {
 });
 
 /*  Google AUTH  */
-
 const GOOGLE_CLIENT_ID =
   "480000320991-3h6eq67pprqjk6so5m5ajmgvls8b5sbe.apps.googleusercontent.com";
 const GOOGLE_CLIENT_SECRET = "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";
@@ -72,9 +67,29 @@ passport.use(
     }
   )
 );
+/* Middleware function for checking authentication / db initialization */
+let dbInitialized = false;
+const checkForInit = async (req, res, next) => {
+  // Check if user is authenticated to make any request
+  if(req.isAuthenticated()){
+    if( !dbInitialized ){
+      // Determine if this is the user account to populate the db with
+      if(req.user._json.email != process.env.GDRIVE_EMAIL){
+        // Its not the right google drive account / email so redirect and let them know
+        res.redirect("/login?error=user-email-does-not-match-expected-initialization-email");
+      }
+    }
+    // Db already initialized and the user is authenticated so continue on with the request
+    else{
+      next();
+    }
+  }
+  else{ // Failed to authenticate the request so redirect to login route
+    res.redirect('/login');
+  }
+}
 
 /* GENERAL ROUTE HANDLING */
-
 app.get("/", function (req, res) {
   if (req.isAuthenticated()) res.redirect('/success');
   else res.redirect('/login');
@@ -111,7 +126,6 @@ app.get("/success", async (req, res) => {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
-      await client.initDb();
       const fileList = await client.getFiles();
       res.render("index", { array: fileList || [] });
     } catch (e) {
@@ -204,7 +218,7 @@ app.post("/addPermission", async (req, res) => {
 });
 
 app.get('*', (req, res) => res.send(`<h1>404</h1><image src="https://thumbs.gfycat.com/AccurateUnfinishedBergerpicard-size_restricted.gif">`));
+
 app.listen(port, async () => {
-  await startup();
   console.log("App listening on port " + port);
 });
