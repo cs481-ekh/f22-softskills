@@ -26,6 +26,17 @@ interface IDrivePermissionManager {
    * @param permissionId the id of the permission to remove
    */
   deletePermission(fileId: string, permissionId: string): Promise<void>;
+
+  /**
+   * Given an array of file ids and emails, creates new permissions for all emails provided
+   * to access all files provided. Should provide files which are not nested, but it will
+   * un-nest them if the need arises.
+   * @param fileIds - Array of parent file ids to add the permissions too
+   * @param role - Role of permissions to add
+   * @param type - Type of permissions to add
+   * @param emails - Array of emails to give permissions too
+   */
+  addPermissions(fileIds: string[], role: Role, type: GranteeType, emails: string[]): Promise<File[]>;
   /**
    * Adds a permission to the given File. If the GranteeType is user or group, then
    * an email address will need to be passed. If the GranteeType is domain, then a
@@ -315,32 +326,43 @@ class DrivePermissionManager implements IDrivePermissionManager {
         emails,
         reason: "File not found in database"
       });
-    // TODO: minimize requestedFiles
-    // TODO: only update file entries and create one permission
-    // get all files to modify
+    // get all files to modify to use with db
     let filesToUpdate: File[] = [];
     for (let i = 0; i < requestedFiles.length; i++)
       if (!filesToUpdate.some(f => f.id == requestedFiles[i].id))
         filesToUpdate = filesToUpdate.concat(await this.db.files.getFileAndSubtree(requestedFiles[i].id));
-    // get array of parent files
+    // get array of parent files to use with drive api
     let parentFiles: File[] = [];
     filesToUpdate.forEach(file => {
       if (!file.parents || file.parents.length == 0)
         parentFiles.push(file);
-      if (!filesToUpdate.some(f => f.id == file.parents[0]))
+      else if (!filesToUpdate.some(f => f.id == file.parents[0]))
         parentFiles.push(file);
     });
-    // TODO: only modify parentFiles with google drive api, then modify all filesToUpdate in db
-    // QUESTION: how to remove permission?
-    // QUESTION: if i share a folder, then remove the share from a child, what happens?
-    // ANSWER: permission is removed from child only
-    // will need to do some serious reworking that idk if i have time for to meet the initial deadline
-    // modify and update each file/permission
+    // store files in separate arrays for each tree
+    const trees: Map<string, File[]> = new Map();
+    parentFiles.forEach(parent => {
+      trees.set(parent.id, [parent]);
+    });
+    trees.forEach((tree, key) => {
+      const stack: File[] = tree;
+      while (stack.length > 0) {
+        let curr: File = stack.pop();
+        if (curr.children && curr.children.length + 0)
+          curr.children.forEach(childId => {
+            let temp = filesToUpdate.find(f => f.id == childId);
+            stack.push(temp);
+            trees.get(key).push(temp);
+          });
+      }
+    });
     try {
-      for (let i = 0; i < filesToUpdate.length; i++) {
+      // create new permissions in drive api
+      for (let i = 0; i < parentFiles.length; i++) {
+        let createdPermissions: Permission[] = [];
         for (let j = 0; j < emails.length; j++) {
           const res = await this.drive.permissions.create({
-            fileId: filesToUpdate[i].id,
+            fileId: parentFiles[i].id,
             fields: "*",
             requestBody: {
               role,
@@ -348,25 +370,36 @@ class DrivePermissionManager implements IDrivePermissionManager {
               emailAddress: emails[j]
             }
           });
-          if (filesToUpdate[i].name !== "CS-HU 130")
-            continue;
-          if (filesToUpdate[i].name == "CS-HU 130")
-            console.log(res.data);
-          let permission: Permission = {
-            id: res.data.id,
-            fileId: filesToUpdate[i].id,
-            type: res.data.type,
-            role: res.data.role,
-            deleted: res.data.deleted,
-            pendingOwner: res.data.pendingOwner,
-            user: {
-              displayName: res.data.displayName,
-              emailAddress: res.data.emailAddress,
-              photoLink: res.data.photoLink,
-            },
-          };
-          filesToUpdate[i] = await this.db.files.createPermission(filesToUpdate[i], permission);
-          if (!filesToUpdate[i])
+          if (!res)
+            return Promise.reject({
+              fileIds,
+              role,
+              type,
+              emails,
+              reason: "There was a problem creating the permissions with Google Drive."
+            });
+          // only need one file entry per email
+          if (j == 0)
+            createdPermissions.push({
+              id: res.data.id,
+              fileId: parentFiles[i].id,
+              type: res.data.type,
+              role: res.data.role,
+              deleted: res.data.deleted,
+              pendingOwner: res.data.pendingOwner,
+              user: {
+                displayName: res.data.displayName,
+                emailAddress: res.data.emailAddress,
+                photoLink: res.data.photoLink,
+              },
+            });
+        }
+        // update db
+        let tree: File[] = trees.get(parentFiles[i].id);
+        for (let j = 0; j < tree.length; j++) {
+          tree[j].permissions.concat(createdPermissions);
+          await this.db.files.update(tree[j]);
+          if (!tree[j])
             return Promise.reject({
               fileIds,
               role,
