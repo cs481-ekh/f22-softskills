@@ -209,28 +209,29 @@ export class Files {
      * @param callback - Callback function to execute
      * @returns - True if permissions were stripped, false otherwise
      */
-    async stripAllPermissions(fileId: string, callback?: Function): Promise<boolean> {
+    async stripAllPermissions(fileId: string, callback?: Function): Promise<File[]> {
         const filesToStrip: File[] = await this.getFileAndSubtree(fileId);
         // if file is invalid
         if (filesToStrip.length == 0) {
             if (callback)
-                callback(false);
-            return Promise.resolve(false);
+                callback([]);
+            return Promise.resolve([]);
         }
         // if no files have any permissions
         if (!filesToStrip.some(file => file.permissions && file.permissions.length > 0)) {
             if (callback)
-                callback(true);
-            return Promise.resolve(true);
+                callback(filesToStrip);
+            return Promise.resolve(filesToStrip);
         }
         // remove permissions from all files
         let query = "UPDATE Files SET PERMISSIONS = '{}' WHERE ID IN ('";
         filesToStrip.forEach(file => query += file.id + "', '");
         query = query.slice(0, query.length - 3) + ");";
         await this.pool.query(query);
+        filesToStrip.forEach(file => file.permissions = []);
         if (callback)
-            callback(true);
-        return Promise.resolve(true);
+            callback(filesToStrip);
+        return Promise.resolve(filesToStrip);
     }
 
     /**
