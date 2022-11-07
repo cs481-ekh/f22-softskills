@@ -13,6 +13,13 @@ function getFiles() {
     });
 }
 
+/**
+ * Given the id of a file, requests an array of all grandchildren of the given file
+ * from the server
+ * 
+ * @param {string} fileId - Id of file to get the grandchildren of
+ * @returns - Array of grandchildren
+ */
 async function getGrandchildren(fileId) {
     const file = files.find(f => f.id == fileId);
     if (!file || !file.children || file.children.length == 0)
