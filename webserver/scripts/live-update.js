@@ -13,6 +13,13 @@ function getFiles() {
     });
 }
 
+/**
+ * Given the id of a file, requests an array of all grandchildren of the given file
+ * from the server
+ * 
+ * @param {string} fileId - Id of file to get the grandchildren of
+ * @returns - Array of grandchildren
+ */
 async function getGrandchildren(fileId) {
     const file = files.find(f => f.id == fileId);
     if (!file || !file.children || file.children.length == 0)
@@ -34,6 +41,77 @@ async function getGrandchildren(fileId) {
         }
     });
     if (res)
-        return res.data;
-    return [];
+        return Promise.resolve(res.data);
+    return Promise.resolve([]);
+}
+
+async function testFiles() {
+    const params = {
+        fileIds: [
+            "1NVaiPgW70cvOOHu7dQWlpYC9y_upuKqqfa3LHi1YVN4",
+            "1GRX6cTr0LeWCPh9RRCVIZjoWtAhOL8lwQqeXWqm_EZg"
+        ],
+        role: "reader",
+        granteeType: "user",
+        emails: [
+            "pb4000231@gmail.com"
+        ]
+    };
+    const res = await axios.post('/addPermissions', params);
+    console.log("res", res);
+    console.log("res.data", res.data);
+    if (res)
+        return Promise.resolve(res.data);
+    return Promise.resolve(res);
+}
+
+async function testFolder() {
+    const params = {
+        fileIds: [
+            "1MqXS-fkiU1rFkkQhOSlHqWiL5KIlBqOA"
+        ],
+        role: "reader",
+        granteeType: "user",
+        emails: [
+            "pb4000231@gmail.com"
+        ]
+    };
+    const res = await axios.post('/addPermissions', params);
+    console.log("res", res);
+    console.log("res.data", res.data);
+    if (res)
+        return Promise.resolve(res.data);
+    return Promise.resolve(res);
+}
+
+/**
+ * Sends a request to the server to add new permissions
+ * for the given files and users
+ * 
+ * @param {string[]} fileIds - Array of file ids to add permissions to
+ * @param {string} role - Role of the permissions to add
+ * @param {string} granteeType - Type of recipient of permissions
+ * @param {string[]} emails - Array of emails to add permissions to
+ * @returns - Array of files with updated permissions
+ */
+async function requestAddPermissions(fileIds, role, granteeType, emails) {
+    const params = { fileIds, role, granteeType, emails };
+    const res = await axios.post('/addPermissions', params);
+    if (res && res.data)
+        return Promise.resolve(res.data);
+    return Promise.reject(res);
+}
+
+/**
+ * Given an array of file ids to update, sends a request to the server to 
+ * strip all permissions from the given files
+ * 
+ * @param {string[]} fileIds - Array of file ids to remove permissions from
+ * @returns - Array of all updated file objects, including children
+ */
+async function requestRemovePermissions(fileIds) {
+    const res = await axios.post('/deletePermissions', { fileIds });
+    if (res && res.data)
+        return Promise.resolve(res.data);
+    return Promise.reject(res);
 }
