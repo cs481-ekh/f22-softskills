@@ -249,7 +249,7 @@ app.post("/addPermission", checkForInit, async (req, res) => {
 });
 
 // returns array of updated file objects
-app.post("/addPermissions", async (req, res) => {
+app.post("/addPermissions", checkForInit, async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
       const { fileIds, role, granteeType, emails } = req.body;
