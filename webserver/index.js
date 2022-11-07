@@ -175,7 +175,7 @@ app.get("/getPermissions", checkForInit, async (req, res) => {
   } else res.redirect("/success");
 });
 
-// deletePermissions
+// deletePermission
 app.post("/deletePermission", checkForInit, async (req, res) => {
   if (req.isAuthenticated() && req.user && req.user.accessToken) {
     try {
@@ -184,6 +184,33 @@ app.post("/deletePermission", checkForInit, async (req, res) => {
       const client = new DrivePermissionManager(oauth2Client);
       try {
         await client.deletePermission(fileId, permissionId);
+      }
+      catch (error) {
+        if (error.reason == "Failed to update db.") {
+          res.sendStatus(500).json({ fileId, permissionId, error })
+        }
+        else res.sendStatus(400).json({ fileId, permissionId, error })
+      }
+    }
+    catch (e) {
+      res.json(e);
+      console.log("ERROR", e);
+    }
+  }
+  else res.redirect("/login");
+});
+
+// deletePermissions
+app.post("/deletePermissions", checkForInit, async (req, res) => {
+  if (req.isAuthenticated() && req.user && req.user.accessToken) {
+    try {
+      const { fileIds } = req.body;
+      setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
+      const client = new DrivePermissionManager(oauth2Client);
+      try {
+        // returns an array of all updated files
+        let files = await client.deletePermissions(fileIds);
+        res.json(files);
       }
       catch (error) {
         if (error.reason == "Failed to update db.") {
@@ -222,7 +249,7 @@ app.post("/addPermission", checkForInit, async (req, res) => {
 });
 
 // returns array of updated file objects
-app.post("/addPermissions", async (req, res) => {
+app.post("/addPermissions", checkForInit, async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
       const { fileIds, role, granteeType, emails } = req.body;

@@ -13,6 +13,13 @@ function getFiles() {
     });
 }
 
+/**
+ * Given the id of a file, requests an array of all grandchildren of the given file
+ * from the server
+ * 
+ * @param {string} fileId - Id of file to get the grandchildren of
+ * @returns - Array of grandchildren
+ */
 async function getGrandchildren(fileId) {
     const file = files.find(f => f.id == fileId);
     if (!file || !file.children || file.children.length == 0)
@@ -90,6 +97,20 @@ async function testFolder() {
 async function requestAddPermissions(fileIds, role, granteeType, emails) {
     const params = { fileIds, role, granteeType, emails };
     const res = await axios.post('/addPermissions', params);
+    if (res && res.data)
+        return Promise.resolve(res.data);
+    return Promise.reject(res);
+}
+
+/**
+ * Given an array of file ids to update, sends a request to the server to 
+ * strip all permissions from the given files
+ * 
+ * @param {string[]} fileIds - Array of file ids to remove permissions from
+ * @returns - Array of all updated file objects, including children
+ */
+async function requestRemovePermissions(fileIds) {
+    const res = await axios.post('/deletePermissions', { fileIds });
     if (res && res.data)
         return Promise.resolve(res.data);
     return Promise.reject(res);

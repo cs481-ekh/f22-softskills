@@ -19,6 +19,13 @@ interface IDrivePermissionManager {
    * @returns [Permission] || []
    */
   getPermissions(s: GetPermissionsOptions): Promise<Permission[]>;
+
+  /**
+   * Given an array of file ids, strips all permissions from the files
+   * and their children
+   * @param fileIds - Array of file ids to strip permissions from
+   */
+  deletePermissions(fileIds: string[]): Promise<File[]>;
   /**
    * Deletes the permission identified by permissionId from the file
    * identified by fileId.
@@ -227,6 +234,52 @@ class DrivePermissionManager implements IDrivePermissionManager {
       return Promise.reject({ reason: `Invalid parameters provided ${s}` });
     }
   }
+
+  async deletePermissions(fileIds: string[]): Promise<File[]> {
+    // check for valid files
+    if (!fileIds || fileIds.length == 0)
+      return Promise.reject({
+        fileIds,
+        reason: 'No files provided'
+      });
+    const files: File[] = await this.db.files.readArray(fileIds);
+    if (!files || files.length == 0)
+      return Promise.reject({
+        fileIds,
+        reason: 'Files not found in database'
+      });
+    let allFiles: Set<File> = new Set();
+    for (let i = 0; i < fileIds.length; i++) {
+      (await this.db.files.getFileAndSubtree(fileIds[i])).forEach(f => allFiles.add(f));
+    }
+    // if no change needs to be made, leave it
+    let fileArray: File[] = Array.from(allFiles);
+    if (!fileArray.some(file => file.permissions && file.permissions.length > 0))
+      return Promise.resolve(fileArray);
+    // make the changes
+    try {
+      for (let i = 0; i < fileArray.length; i++) {
+        if (fileArray[i].permissions && fileArray[i].permissions.length > 0) {
+          for (let j = 0; j < fileArray[i].permissions.length; j++) {
+            let params = {
+              fileId: fileArray[i].id,
+              permissionId: fileArray[i].permissions[j].id
+            }
+            await this.drive.permissions.delete(params);
+          }
+          fileArray[i].permissions = [];
+          await this.db.files.update(fileArray[i]);
+        }
+      }
+    } catch (e) {
+      return Promise.reject({
+        fileArray,
+        reason: `Something went wrong talking to the Drive API:\n${e}`
+      });
+    }
+    return Promise.resolve(fileArray);
+  }
+
   async deletePermission(fileId: string, permissionId: string): Promise<void> {
     try {
       let file: File = await this.db.files.read(fileId);
