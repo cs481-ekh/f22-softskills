@@ -252,6 +252,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
     for (let i = 0; i < fileIds.length; i++) {
       (await this.db.files.getFileAndSubtree(fileIds[i])).forEach(f => allFiles.add(f));
     }
+    // if no change needs to be made, leave it
     let fileArray: File[] = Array.from(allFiles);
     if (!fileArray.some(file => file.permissions && file.permissions.length > 0))
       return Promise.resolve(fileArray);
