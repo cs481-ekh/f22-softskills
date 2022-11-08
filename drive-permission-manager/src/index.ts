@@ -267,7 +267,15 @@ class DrivePermissionManager implements IDrivePermissionManager {
                 fileId: fileArray[i].id,
                 permissionId: fileArray[i].permissions[j].id
               }
-              await this.drive.permissions.delete(params);
+              try {
+                await this.drive.permissions.delete(params);
+              } catch (e) {
+                if (e.message.indexOf("Permission not found") == -1)
+                  return Promise.reject({
+                    fileArray,
+                    reason: `Something went wrong talking to the Drive API:\n${e}`
+                  });
+              }
             } else {
               ownerPermission = fileArray[i].permissions[j];
             }
