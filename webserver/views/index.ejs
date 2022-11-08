@@ -8,7 +8,7 @@
         integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css"
         integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>u
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"
         integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
         crossorigin="anonymous"></script>
@@ -24,7 +24,7 @@
     <script>
         function addPermission() {
             let emails = document.getElementById('emailTextEntry').value;
-            let permission = document.getElementById('inputState').value;
+            let role = document.getElementById('inputState').value;
             let fileIds = Array.from(document.querySelectorAll("input[type=checkbox]:checked"));
             let fileIdArray = [];
             let emailArray = emails.split('\n');
@@ -33,27 +33,28 @@
             document.getElementById('inputState').value = 'choose...';
 
             for (let i = 0; i < fileIds.length; i++) {
-                fileIdArray.push(fileIds[i].name)
+                fileIdArray.push(fileIds[i].parentElement.parentElement.id)
             }
 
-            const addPost = async (fileId, role, granteeType, emails) => {
-                const url = `/addPermission`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        fileId: fileIdArray,
-                        role: role,
-                        granteeType: granteeType,
-                        emails: emailArray
-                    })
-                });
-                if (response.status !== 200) {
-                    throw new Error('Error setting permission');
+            requestAddPermissions(fileIdArray, role, "user", emailArray).then(res => {
+                if (res) {
+                    res.forEach(file => {
+                        for (let i = 0; i < files.length; i++) {
+                            if (files[i].id == file.id) {
+                                files[i] = file;
+                                break;
+                            }
+                        }
+                    });
+                    fileIds.forEach((file) => {
+                        file.checked = false;
+                        file.parentElement.style.backgroundColor = '#7ECDFA';
+                    });
+                    document.getElementById('list').innerHTML = '';
+                } else {
+                    console.log("no res for addPermission");
                 }
-            }
+            });
         }
 
         function checkBoxCounter() {
@@ -274,16 +275,24 @@
                 isChecked.forEach((file) => {
                     fileIds.push(file.parentElement.parentElement.id);
                 });
-                console.log(fileIds);
                 requestRemovePermissions(fileIds).then(res => {
-                    res.forEach(file => {
-                        files[files.indexOf(f => f.id == file.id)] = file;
-                    })
-                    isChecked.forEach((file) => {
-                        file.checked = false;
-                        file.parentElement.style.backgroundColor = '#7ECDFA';
-                    });
-                    document.getElementById('list').innerHTML = '';
+                    if (res) {
+                        res.forEach(file => {
+                            for (let i = 0; i < files.length; i++) {
+                                if (files[i].id == file.id) {
+                                    files[i] = file;
+                                    break;
+                                }
+                            }
+                        })
+                        isChecked.forEach((file) => {
+                            file.checked = false;
+                            file.parentElement.style.backgroundColor = '#7ECDFA';
+                        });
+                        document.getElementById('list').innerHTML = '';
+                    } else {
+                        console.log("no res for removePermission");
+                    }
                 });
             }
             // Add the root parent folders to the root container to start
