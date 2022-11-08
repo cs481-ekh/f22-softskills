@@ -260,14 +260,22 @@ class DrivePermissionManager implements IDrivePermissionManager {
     try {
       for (let i = 0; i < fileArray.length; i++) {
         if (fileArray[i].permissions && fileArray[i].permissions.length > 0) {
+          let ownerPermission: Permission;
           for (let j = 0; j < fileArray[i].permissions.length; j++) {
-            let params = {
-              fileId: fileArray[i].id,
-              permissionId: fileArray[i].permissions[j].id
+            if (fileArray[i].owners[0].emailAddress !== fileArray[i].permissions[j].user.emailAddress) {
+              let params = {
+                fileId: fileArray[i].id,
+                permissionId: fileArray[i].permissions[j].id
+              }
+              await this.drive.permissions.delete(params);
+            } else {
+              ownerPermission = fileArray[i].permissions[j];
             }
-            await this.drive.permissions.delete(params);
           }
-          fileArray[i].permissions = [];
+          if (ownerPermission)
+            fileArray[i].permissions = [ownerPermission];
+          else
+            fileArray[i].permissions = [];
           await this.db.files.update(fileArray[i]);
         }
       }

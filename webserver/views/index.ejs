@@ -8,7 +8,7 @@
         integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css"
         integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>u
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"
         integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
         crossorigin="anonymous"></script>
@@ -19,6 +19,7 @@
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
+
 <body>
     <script>
         function addPermission() {
@@ -248,18 +249,17 @@
                 });
                 return buttonContainer;
             }
-            
+
             const box = document.getElementById('box');
-            const setPermission = async (fileId, permissionId) => {
-                const url = `/deletePermission`;
+            const setPermission = async (fileIds) => {
+                const url = `/deletePermissions`;
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        fileId: fileId,
-                        permissionId: permissionId
+                        fileIds: fileIds
                     })
                 });
                 if (response.status !== 200) {
@@ -268,14 +268,22 @@
             }
 
             function removePermission() {
+                const fileIds = [];
                 const checkBoxes = document.getElementsByClassName('checkbox');
                 const isChecked = Array.from(checkBoxes).filter((checkbox) => checkbox.checked);
                 isChecked.forEach((file) => {
-                    const fileId = file.parentNode.parentNode.id;
-                    const permissionIds = (files.find((file) => file.id === fileId).permissions || []).map((permission) => permission.id);
-                    permissionIds.forEach((permissionId) => {
-                        setPermission(fileId, permissionId);
+                    fileIds.push(file.parentElement.parentElement.id);
+                });
+                console.log(fileIds);
+                requestRemovePermissions(fileIds).then(res => {
+                    res.forEach(file => {
+                        files[files.indexOf(f => f.id == file.id)] = file;
+                    })
+                    isChecked.forEach((file) => {
+                        file.checked = false;
+                        file.parentElement.style.backgroundColor = '#7ECDFA';
                     });
+                    document.getElementById('list').innerHTML = '';
                 });
             }
             // Add the root parent folders to the root container to start
