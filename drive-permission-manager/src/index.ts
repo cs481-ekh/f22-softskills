@@ -169,7 +169,6 @@ class DrivePermissionManager implements IDrivePermissionManager {
             file.parents = file.parents.filter(parentId => !parentIds.includes(parentId))
         }
       }
-      // console.log(JSON.stringify(fileList))
       try {
         await this.db.files.populateTable(fileList);
         console.log(`Database initialization complete.`)
@@ -181,7 +180,6 @@ class DrivePermissionManager implements IDrivePermissionManager {
     } catch (e) {
       console.log(e);
     }
-    // console.log("<-----------------------------")
   }
   async getFiles(fileIds?: string[]): Promise<File[]> {
     try {
@@ -413,9 +411,11 @@ class DrivePermissionManager implements IDrivePermissionManager {
     const trees: Map<string, File[]> = new Map();
     parentFiles.forEach(parent => {
       trees.set(parent.id, [parent]);
+      if (trees.get(parent.id).length == 0)
+        trees.get(parent.id).push(parent);
     });
     trees.forEach((tree, key) => {
-      const stack: File[] = tree;
+      const stack: File[] = Array.from(tree);
       while (stack.length > 0) {
         let curr: File = stack.pop();
         if (curr.children && curr.children.length + 0)
@@ -448,27 +448,31 @@ class DrivePermissionManager implements IDrivePermissionManager {
               emails,
               reason: "There was a problem creating the permissions with Google Drive."
             });
-          // only need one file entry per email
-          if (j == 0)
-            createdPermissions.push({
-              id: res.data.id,
-              fileId: parentFiles[i].id,
-              type: res.data.type,
-              role: res.data.role,
-              deleted: res.data.deleted,
-              pendingOwner: res.data.pendingOwner,
-              user: {
-                displayName: res.data.displayName,
-                emailAddress: res.data.emailAddress,
-                photoLink: res.data.photoLink,
-              },
-            });
+          createdPermissions.push({
+            id: res.data.id,
+            fileId: parentFiles[i].id,
+            type: res.data.type,
+            role: res.data.role,
+            deleted: res.data.deleted,
+            pendingOwner: res.data.pendingOwner,
+            user: {
+              displayName: res.data.displayName,
+              emailAddress: res.data.emailAddress,
+              photoLink: res.data.photoLink,
+            },
+          });
+          // creating the permission in the db is a good idea too lol
+          await this.db.permissions.create(createdPermissions[createdPermissions.length - 1]);
         }
         // update db
         let tree: File[] = trees.get(parentFiles[i].id);
         for (let j = 0; j < tree.length; j++) {
-          tree[j].permissions.concat(createdPermissions);
-          await this.db.files.update(tree[j]);
+          // overwrite old permissions for the same user
+          for (let k = 0; k < tree[j].permissions.length; k++)
+            if (createdPermissions.some(p => tree[j].permissions[k].user.emailAddress == p.user.emailAddress))
+              tree[j].permissions.splice(k--, 1);
+          tree[j].permissions = tree[j].permissions.concat(createdPermissions);
+          const res = await this.db.files.update(tree[j]);
           if (!tree[j])
             return Promise.reject({
               fileIds,
@@ -611,21 +615,6 @@ class DrivePermissionManager implements IDrivePermissionManager {
       });
     }
   }
-  //   async getDrives(): Promise<any[]> {
-  //     try{
-  //       let retVal: any[] = [];
-  //       const res = await this.drive.drives.list();
-  //       for(const drive of res.data.drives){
-  //         console.log('ID OF DRIVE: ' + drive.id);
-  //         retVal.push(drive.id);
-  //       }
-  //       console.log("LIST OF DRIVES: " + retVal)
-  //       return Promise.resolve(retVal);
-  //     }
-  //     catch(e){
-  //       return Promise.reject(e)
-  //     }
-  //   }
 }
 
 export default DrivePermissionManager;

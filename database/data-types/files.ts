@@ -422,7 +422,6 @@ export class Files {
     async readRootAndChildren(callback?: Function): Promise<File[]> {
         let filesOut: File[] = [];
         const res = await this.pool.query("SELECT * FROM Files WHERE PARENTS = '{}'");
-        // TODO: think about removing this
         if (!res || !res.rows || res.rows.length == 0) {
             console.error("Error in Files.readRoot or no files stored in root directory");
         } else {
@@ -449,15 +448,6 @@ export class Files {
                             owners.push(owner);
                     }
                     file.owners = owners;
-                }
-                if (file.permissions && file.permissions.length > 0) {
-                    let permissions: Permission[] = [];
-                    for (let i = 0; i < file.permissions.length; i++) {
-                        let permission = await this.permissions.read(res.rows[r].permissions[i]);
-                        if (permission)
-                            permissions.push(permission);
-                    }
-                    file.permissions = permissions;
                 }
                 filesOut.push(file);
             }
