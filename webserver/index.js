@@ -213,6 +213,7 @@ app.post("/deletePermissions", checkForInit, async (req, res) => {
         res.json(files);
       }
       catch (error) {
+        console.log("ERROR", error);
         if (error.reason == "Failed to update db.") {
           res.sendStatus(500).json({ fileIds, permissionId, error })
         }
