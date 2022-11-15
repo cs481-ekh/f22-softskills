@@ -29,11 +29,15 @@
           <div class="card bg-dark text-white" style="border-radius: 1rem;">
             <div class="card-body p-5 text-center">
               <div class="mb-md-5 mt-md-4 pb-5">
-                <h2 class="fw-bold mb-2 text-uppercase">TEAM SOFTSKILLS</h2>
-                <p class="text-white-50 mb-5">Drive Permission Manager</p>
+                <h4 class="fw-bold mb-2 text-uppercase">Drive Permission Manager</h4>
+                <p class="text-white-50 mb-5">Institute for Pervasive Cybersecurity</p>
                 <form action="/auth/google" method="get">
-                  <button class="btn btn-lg btn-block btn-primary" style="background-color: #dd4b39;" type="submit"><i
-                      class="fab fa-google me-2"></i> Sign in with google</button>
+                  <button onclick="toggleLoading()" class="btn btn-lg btn-block btn-primary"
+                    style="background-color: #dd4b39;" type="submit"><i aria-hidden="true"></span>
+                      <span id="loadingIndicator" class="spinner-border spinner-border-sm" role="status"
+                      hidden="true"></span>
+                      <span class="fab fa-google me-2"></i> Sign in with google</span>
+                  </button>
                 </form>
               </div>
             </div>
@@ -45,3 +49,11 @@
 </body>
 
 </html>
+
+<script>
+  function toggleLoading() {
+    console.log(document.getElementById('loadingIndicator').hidden);
+    document.getElementById('loadingIndicator').removeAttribute("hidden");
+    console.log("Loading...");
+  }
+</script>
