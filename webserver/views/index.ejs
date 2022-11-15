@@ -221,8 +221,21 @@
                 button.addEventListener('click', onClickHandler);
                 buttonContainer.appendChild(button);
                 button.appendChild(checkbox);
+
+                //if parent is checked, all appended children are pre-checked
+                button.addEventListener('click', function (event) {
+                    if (checkbox.checked) {
+                        var children = buttonContainer.getElementsByTagName('input');
+                        for (var i = 0; i < children.length; i++) {
+                            children[i].checked = true;
+                            children[i].parentElement.style.backgroundColor = 'grey';
+                            checkBoxCounter();
+                        }
+                    }
+                });
+
+                //change the color of the button on checkbox toggle
                 checkbox.addEventListener('click', function (event) {
-                    //change the color of the button on checkbox toggle
                     if (checkbox.checked) {
                         button.style.backgroundColor = 'grey';
                         checkBoxCounter();
