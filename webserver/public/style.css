@@ -130,3 +130,10 @@ body {
     width: 50%;
     float: right
 }
+
+.removeList {
+    text-align: left;
+    padding: 10px 10px 10px 10px;
+    margin-left: 30px;
+    overflow-y: scroll;
+}
