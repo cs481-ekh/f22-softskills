@@ -32,7 +32,7 @@ export class Files {
     async initTable() {
         await this.pool.query("CREATE TABLE IF NOT EXISTS Files (ID TEXT PRIMARY KEY NOT NULL, "
             + "KIND TEXT NOT NULL, NAME TEXT, PARENTS TEXT[], CHILDREN TEXT[], OWNERS TEXT[], "
-            + "PERMISSIONS TEXT[]);").then(res => {
+            + "PERMISSIONS TEXT[], MIMETYPE TEXT);").then(res => {
                 if (!res)
                     console.error("Error in files.initTable");
             });
