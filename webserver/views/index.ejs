@@ -93,6 +93,7 @@
                         accessHolder = accessHolder + '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">'
                         accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(filePermissions[index], 'user.emailAddress') + '</a></li>'
                         accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>ROLE: </b>' + _.get(filePermissions[index], 'role') + '</a></li>'
+                        accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EXPIRES: </b>' + _.get(filePermissions[index], 'expirationDate') + '</a></li>'
                         accessHolder = accessHolder + '</ul>' + '</div>'
                         accessList = accessList + accessHolder;
                     }
