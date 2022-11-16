@@ -211,9 +211,22 @@ class DrivePermissionManager implements IDrivePermissionManager {
   async getPermissions(s: GetPermissionsOptions): Promise<Permission[]> {
     // By File Id
     if ("fileId" in s) {
+      console.log(`In getPermissions... fileId ${s.fileId}`);
       try {
-        let file = await this.db.files.read(s.fileId);
-        if (file) return Promise.resolve(file.permissions);
+        let fileList = await this.db.files.getFileAndSubtree(s.fileId);
+        if (fileList){
+          //console.log(fileList);
+          let permissionsSet: Set<Permission> = new Set();
+          for(const file of fileList){
+            for(const perm of file.permissions){
+              permissionsSet.add(perm);
+            }
+          }
+          console.log(permissionsSet);
+          let retVal = Array.from(permissionsSet);
+          console.log(retVal);
+          return Promise.resolve(retVal);
+        }
         else return Promise.reject({ ...s, reason: "File not found." })
       }
       catch (e) {
