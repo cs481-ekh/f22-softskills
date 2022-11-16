@@ -164,15 +164,24 @@ app.get("/getPermissions", checkForInit, async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
+      const fileIds = req.query.fileIds;
+      console.log(fileIds);
+      let retVal = [];
       const client = new DrivePermissionManager(oauth2Client);
-      const permissionList = await client.getPermissions(s);
-      console.log(JSON.stringify(permissionList));
-      res.render("index", { array: permissionList || [] });
-    } catch (e) {
+      for(const fileId of fileIds){
+        let permissionsList = await client.getPermissions({fileId});
+        for(const permission of permissionsList){
+          retVal.push(permission);
+        }
+      }
+      res.json(retVal);
+    }
+    catch (e) {
       console.log("ERROR", e);
       res.sendStatus(403);
     }
-  } else res.redirect("/success");
+  }
+  else res.redirect("/success");
 });
 
 // deletePermission
