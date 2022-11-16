@@ -28,6 +28,7 @@ export class Files {
      * - CHILDREN = Array of IDs of child directories and files
      * - OWNERS = Array of IDs of owners of file
      * - PERMISSIONS = Array of IDs of permissions relating to file
+     * - MIMETYPE = Type of file being stored
      */
     async initTable() {
         await this.pool.query("CREATE TABLE IF NOT EXISTS Files (ID TEXT PRIMARY KEY NOT NULL, "
@@ -52,11 +53,11 @@ export class Files {
     async create(file: File, callback?: Function): Promise<File | undefined> {
         let fileOut: File | undefined;
         await this.pool.query("INSERT INTO Files (ID, KIND, NAME, " + ((file.parents) ? "PARENTS, " : "") + "CHILDREN, OWNERS, "
-            + "PERMISSIONS) VALUES ('" + file.id + "', '" + file.kind + "', '" + file.name + "', '" +
+            + "PERMISSIONS, MIMETYPE) VALUES ('" + file.id + "', '" + file.kind + "', '" + file.name + "', '" +
             ((file.parents) ? this.arrayToString(file.parents) + "', '" : "") +
             this.fileArrayToString(file.children) + "', '" + this.ownersArrayToString(file.owners)
             + "', '" + this.permArrayToString(file.permissions)
-            + "') ON CONFLICT(ID) DO NOTHING;").then(async res => {
+            + "', '" + file.mimeType + "') ON CONFLICT(ID) DO NOTHING;").then(async res => {
                 if (!res)
                     console.error("Error in files.create");
                 else {
@@ -113,7 +114,8 @@ export class Files {
                     parents: res.rows[0].parents,
                     children: res.rows[0].children,
                     owners: owners,
-                    permissions: perms
+                    permissions: perms,
+                    mimeType: res.rows[0].mimetype
                 };
             }
             if (callback)
@@ -136,7 +138,7 @@ export class Files {
             + "', NAME = '" + file.name + ((file.parents) ? "', PARENTS = '" + this.arrayToString(file.parents)
                 : "") + "', CHILDREN = '" + this.fileArrayToString(file.children) + "', OWNERS = '"
             + this.ownersArrayToString(file.owners) + "', PERMISSIONS = '"
-            + this.permArrayToString(file.permissions) + "' WHERE ID = '" + file.id + "';").then(res => {
+            + this.permArrayToString(file.permissions) + "', MIMETYPE = '" + file.mimeType + "' WHERE ID = '" + file.id + "';").then(res => {
                 if (!res)
                     console.error("Error in files.update");
                 else {
@@ -295,7 +297,8 @@ export class Files {
                     parents: res.rows[0].parents,
                     children: res.rows[0].children,
                     owners: owners,
-                    permissions: perms
+                    permissions: perms,
+                    mimeType: res.rows[0].mimetype
                 };
             }
             if (callback)
@@ -320,14 +323,14 @@ export class Files {
                 callback(undefined);
             return Promise.resolve(undefined);
         }
-        let query = "INSERT INTO Files (ID, KIND, NAME, PARENTS, CHILDREN, OWNERS, PERMISSIONS) VALUES ";
+        let query = "INSERT INTO Files (ID, KIND, NAME, PARENTS, CHILDREN, OWNERS, PERMISSIONS, MIMETYPE) VALUES ";
         let permissions: Permission[] = [];
         let owners: User[] = [];
         files.forEach(file => {
             query += "('" + file.id + "', '" + file.kind + "', '" + file.name.replaceAll("'", "''")
                 + "', '" + this.arrayToString(file.parents ? file.parents : undefined) + "', '" + this.fileArrayToString(file.children)
                 + "', '" + this.ownersArrayToString(file.owners) + "', '" + this.permArrayToString(file.permissions)
-                + "'), ";
+                + "', '" + file.mimeType + "'), ";
             file.permissions.forEach(permission => {
                 if (!permissions.some(p => p.id == permission.id))
                     permissions.push(permission);
@@ -381,7 +384,8 @@ export class Files {
                         parents: file.parents,
                         children: file.children,
                         owners: owners,
-                        permissions: permArr
+                        permissions: permArr,
+                        mimeType: file.mimetype,
                     });
                 });
                 if (files && files.length > 0 && treeStructure)
@@ -426,7 +430,16 @@ export class Files {
             console.error("Error in Files.readRoot or no files stored in root directory");
         } else {
             for (let r = 0; r < res.rows.length; r++) {
-                let file: File = res.rows[r];
+                let file: File = {
+                    id: res.rows[r].id,
+                    kind: res.rows[r].kind,
+                    name: res.rows[r].name,
+                    parents: res.rows[r].parents,
+                    children: res.rows[r].children,
+                    owners: res.rows[r].owners,
+                    permissions: res.rows[r].permissions,
+                    mimeType: res.rows[0].mimetype
+                };
                 file.permissions = await this.permissions.readArray(res.rows[r].permissions);
                 let children: File[] = [];
                 for (let i = 0; i < file.children.length; i++) {

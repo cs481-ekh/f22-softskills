@@ -6,6 +6,7 @@ export type File = {
     children: File[] | string[];
     owners: User[];
     permissions: Permission[];
+    mimeType: string;
 }
 export type Permission = {
     id: string

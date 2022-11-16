@@ -78,7 +78,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
           pageToken: NextPageToken || "",
           pageSize: 1000,
           fields:
-            "nextPageToken, files(id, name, driveId, permissions, parents, kind, owners)",
+            "nextPageToken, files(id, name, driveId, permissions, parents, kind, owners, mimeType)",
           corpora: "allDrives",
           includeItemsFromAllDrives: true,
           supportsAllDrives: true,
@@ -128,7 +128,8 @@ class DrivePermissionManager implements IDrivePermissionManager {
             owners,
             permissions: permissionsList,
             kind: f.kind,
-            children: []
+            children: [],
+            mimeType: f.mimeType
           };
           // File is finished so add it to the list of parsed Drive files
           fileList.push(file);
