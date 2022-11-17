@@ -32,6 +32,16 @@ body {
     min-height: 35px;
 }
 
+.material-icons {
+    display: flex;
+    min-width: 5%;
+    min-height: 35px;
+    padding-top: 1%;
+    padding-left: 2%;
+    padding-right: 2%;
+    
+}
+
 .button:hover {
     cursor: pointer;
     background-color: #94d3f7;
