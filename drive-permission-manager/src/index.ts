@@ -1,5 +1,5 @@
 import { GoogleAuth, OAuth2Client } from "google-auth-library";
-import { File, GranteeType, Permission, User, Role, GetPermissionsOptions } from "./types";
+import { File, GranteeType, Permission, User, Role, GetPermissionsOptions, DeletePermissionsOptions } from "./types";
 import { drive_v3, google } from "googleapis";
 import { Postgres } from "../../database/postgres";
 import { ParameterDescriptionMessage } from "pg-protocol/dist/messages";
@@ -25,7 +25,7 @@ interface IDrivePermissionManager {
    * and their children
    * @param fileIds - Array of file ids to strip permissions from
    */
-  deletePermissions(fileIds: string[]): Promise<File[]>;
+  deletePermissions(fileIds: string[], options?: DeletePermissionsOptions): Promise<File[]>;
   /**
    * Deletes the permission identified by permissionId from the file
    * identified by fileId.
@@ -247,7 +247,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
     }
   }
 
-  async deletePermissions(fileIds: string[]): Promise<File[]> {
+  async deletePermissions(fileIds: string[], options?: DeletePermissionsOptions): Promise<File[]> {
     // check for valid files
     if (!fileIds || fileIds.length == 0)
       return Promise.reject({
@@ -274,6 +274,10 @@ class DrivePermissionManager implements IDrivePermissionManager {
         if (fileArray[i].permissions && fileArray[i].permissions.length > 0) {
           let ownerPermission: Permission;
           for (let j = 0; j < fileArray[i].permissions.length; j++) {
+            if(options){ // for granularity
+              if(options.emails && !options.emails.includes(fileArray[i].permissions[j].user.emailAddress)) continue;
+              if(options.permissionIds && !options.permissionIds.includes(fileArray[i].permissions[j].id)) continue;
+            }
             if (fileArray[i].owners[0].emailAddress !== fileArray[i].permissions[j].user.emailAddress) {
               let params = {
                 fileId: fileArray[i].id,

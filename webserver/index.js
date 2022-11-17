@@ -213,12 +213,12 @@ app.post("/deletePermission", checkForInit, async (req, res) => {
 app.post("/deletePermissions", checkForInit, async (req, res) => {
   if (req.isAuthenticated() && req.user && req.user.accessToken) {
     try {
-      const { fileIds } = req.body;
+      const { fileIds, permissionIds, emails } = req.body;
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
       try {
         // returns an array of all updated files
-        let files = await client.deletePermissions(fileIds);
+        let files = await client.deletePermissions(fileIds, {permissionIds,emails});
         res.json(files);
       }
       catch (error) {
