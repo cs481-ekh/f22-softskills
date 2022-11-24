@@ -45,6 +45,20 @@
                 fileIdArray.push(fileIds[i].parentElement.parentElement.id)
             }
 
+            getGrandchildren(fileIdArray).then(res => {
+                if (res) {
+                    if (res.length > 0) {
+                        fileIdArray = fileIdArray.concat(res);
+                    }
+                    else {
+                        console.log('no grandchildren');
+                    }
+                }
+                else {
+                    console.log('no res from getGrandchildren');
+                }
+            })
+
             requestAddPermissions(fileIdArray, role, "user", emailArray).then(res => {
                 if (res) {
                     res.forEach(file => {
@@ -69,8 +83,13 @@
         function checkBoxCounter() {
             let checkboxes = document.querySelectorAll("input[name=fileCheckBoxes]:checked");
             let numSelected = checkboxes.length;
-            document.getElementById('list').innerHTML = '';
-            document.getElementById('list').innerHTML = '<div class = "selected-preview">' + '<h1 class = "file-counter">' + '<p id ="countText">' + numSelected + ' file(s) selected.' + '</p>' + '</h1>' + '</div>'
+            if (numSelected > 0) {
+                document.getElementById('list').innerHTML = '';
+                document.getElementById('list').innerHTML = '<div class = "selected-preview">' + '<h1 class = "file-counter">' + '<p id ="countText">' + numSelected + ' file(s) selected.' + '</p>' + '</h1>' + '</div>'
+            }
+            else {
+                document.getElsementById('list').innerHTML = '';
+            }
         }
 
         function getCheckBoxCounter() {
@@ -105,7 +124,6 @@
         }
 
         function emailRemoveList() {
-            let files = JSON.parse(`<%- JSON.stringify(array)%>`)
             let fileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
             let matchedFiles = [];
             let matchedFilesPermissions = [];
@@ -113,8 +131,28 @@
             let emailRemoveList = [];
 
             for (let i = 0; i < fileIds.length; i++) {
+                fileIds[i] = fileIds[i].parentElement.parentElement.id;
+            }
+
+
+            getGrandchildren(fileIds).then(res => {
+                if (res) {
+                    if (res.length > 0) {
+                        fileIds = fileIds.concat(res);
+                    }
+                    else {
+                        console.log('no grandchildren');
+                    }
+                }
+                else {
+                    console.log('no res from getGrandchildren');
+                }
+            })
+
+
+            for (let i = 0; i < fileIds.length; i++) {
                 for (let j = 0; j < files.length; j++) {
-                    if (_.get(files[j], 'id') == fileIds[i].parentElement.parentElement.id) {
+                    if (_.get(files[j], 'id') == fileIds[i]) {
                         matchedFiles.push(files[j]);
                     }
                 }
@@ -130,7 +168,6 @@
                 }
             }
 
-
             let uniqueEmails = [...new Set(emails)];
             let uniqueEmailArray = Array.from(uniqueEmails);
 
@@ -144,11 +181,11 @@
         }
 
         function removeEmails() {
-            let files = JSON.parse(`<%- JSON.stringify(array)%>`)
+            let files = JSON.parse(`<%- JSON.stringify(array)%>`);
             let removeFileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
             let removeCheckboxes = document.querySelectorAll("input[label=removeCheckBox]:checked");
             let emailsToRemove = [];
-            let fileIdsToRemove = Array.from(removeCheckboxes);
+            let fileIdsToRemove = []
             let matchedFiles = [];
             let matchedFilesPermissions = [];
             let permissionIdsToRemove = [];
@@ -171,6 +208,11 @@
                 matchedFilesPermissions.push(_.get(matchedFiles[i], 'permissions'));
             }
 
+            //get file ids from matched files
+            for (let i = 0; i < matchedFiles.length; i++) {
+                fileIdsToRemove.push(_.get(matchedFiles[i], 'id'));
+            }
+
             for (let i = 0; i < matchedFilesPermissions.length; i++) {
                 for (let j = 0; j < matchedFilesPermissions[i].length; j++) {
                     for (let k = 0; k < emailsToRemove.length; k++) {
@@ -180,17 +222,42 @@
                     }
                 }
             }
+            fileIdsToRemove = Array.from(fileIdsToRemove);
 
-            console.log(permissionIdsToRemove);
+            console.log("fileIdsToRemove: " + fileIdsToRemove);
+            console.log("permissionIdsToRemove : " + permissionIdsToRemove);
 
-            //requestRemovePermissionByEmail(removeFileIds, emailsToRemove);
-
+            requestRemovePermissions(fileIdsToRemove, permissionIdsToRemove).then(res => {
+                if (res) {
+                    console.log("res from requestRemovePermissions: " + JSON.stringify(res));
+                    res.forEach(file => {
+                        for (let i = 0; i < files.length; i++) {
+                            if (files[i].id == file.id) {
+                                files[i] = file;
+                                getPermissions(files[i].id).then(res => {
+                                    if (res) {
+                                        files[i].permissions = res;
+                                        console.log('res from getPermissions: ' + JSON.stringify(res));                                  
+                                    }
+                                    else {
+                                        console.log('no res from getPermissions');
+                                    }
+                                })
+                                break;
+                            }
+                        }
+                    })
+                    const isChecked = removeFileIds;
+                    isChecked.forEach((file) => {
+                        file.checked = false;
+                        file.parentElement.style.backgroundColor = '#7ECDFA';
+                    });
+                    document.getElementById('list').innerHTML = '';
+                } else {
+                    console.log("no res for requestRemovePermissions");
+                }
+            });
         }
-
-
-
-
-
     </script>
 
     <div class="jumbotron text-center">
@@ -314,6 +381,7 @@
                 const container = document.createElement('div');
                 checkbox.type = 'checkbox';
                 checkbox.className = 'checkbox';
+                checkbox.name = 'fileCheckBoxes';
                 button.classList.add('button');
                 label.innerHTML = file.name;
 
@@ -389,7 +457,7 @@
                     case 'application/vnd.google-apps.unknown':
                         folderIcon.className = 'material-icons';
                         folderIcon.textContent = 'help';
-                        container.appendChild(folderIcon)
+                        container.appendChild(folderIcon) / get
                         break;
                     case 'application/vnd.google-apps.drive-sdk':
                         folderIcon.className = 'material-icons';
