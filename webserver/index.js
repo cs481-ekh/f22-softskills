@@ -159,11 +159,12 @@ app.get("/getFiles", checkForInit, async (req, res) => {
   }
 });
 
-// getPermissions
+// getPermission
 app.get("/getPermissions", checkForInit, async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
+      console.log('req.query.fileId: ' + JSON.stringify(req.query));
       const fileIds = req.query.fileIds;
       console.log(fileIds);
       let retVal = [];
@@ -184,24 +185,7 @@ app.get("/getPermissions", checkForInit, async (req, res) => {
   else res.redirect("/success");
 });
 
-//app.post(/getPermissions)
-app.post("/getPermissions", checkForInit, async (req, res) => {
-  if (req.user && req.user.accessToken) {
-    try {
-      setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
-      const fileId = req.body.fileId;
-      console.log(fileId);
-      const client = new DrivePermissionManager(oauth2Client);
-      const permissionsList = await client.getPermissions({fileId});
-      res.json(permissionsList);
-    }
-    catch (e) {
-      console.log("ERROR", e);
-      res.sendStatus(403);
-    }
-  }
-  else res.redirect("/success");
-});
+
 
 // deletePermission
 app.post("/deletePermission", checkForInit, async (req, res) => {

@@ -273,33 +273,36 @@ class DrivePermissionManager implements IDrivePermissionManager {
       for (let i = 0; i < fileArray.length; i++) {
         if (fileArray[i].permissions && fileArray[i].permissions.length > 0) {
           let ownerPermission: Permission;
+          let updatedFilePerms = fileArray[i].permissions;
           for (let j = 0; j < fileArray[i].permissions.length; j++) {
             if(options){ // for granularity
               if(options.emails && !options.emails.includes(fileArray[i].permissions[j].user.emailAddress)) continue;
               if(options.permissionIds && !options.permissionIds.includes(fileArray[i].permissions[j].id)) continue;
             }
+            // If not the file owner's permission
             if (fileArray[i].owners[0].emailAddress !== fileArray[i].permissions[j].user.emailAddress) {
               let params = {
                 fileId: fileArray[i].id,
                 permissionId: fileArray[i].permissions[j].id
               }
-              try {
+              try { // make api call to the Drive API to remove the permission
                 await this.drive.permissions.delete(params);
-              } catch (e) {
+                // now remove that permission from the updatedFilePerms array
+                updatedFilePerms = updatedFilePerms.filter(perm => {perm.id != params.fileId})
+              }
+              catch (e) {
                 if (e.message.indexOf("Permission not found") == -1)
                   return Promise.reject({
                     fileArray,
                     reason: `Something went wrong talking to the Drive API:\n${e}`
                   });
               }
-            } else {
+            }
+            else {
               ownerPermission = fileArray[i].permissions[j];
             }
           }
-          if (ownerPermission)
-            fileArray[i].permissions = [ownerPermission];
-          else
-            fileArray[i].permissions = [];
+          fileArray[i].permissions = updatedFilePerms;
           await this.db.files.update(fileArray[i]);
         }
       }

@@ -67,11 +67,12 @@ async function requestRemovePermissions(fileIds, permissionIds) {
  * Given an array of file ids, sends a request to the server to
  * get the permissions for the given files and all of their children
  * 
- * @param {string} fileId - Single file id as string to request permissions for
+ * @param {string[]} fileIds - Array of file ids to request permissions for
  * @returns - Array of all permission objects, including all children
  */
- async function getPermissions(fileId) {
-    const res = await axios.post('/getPermissions', {fileId});
+ async function getPermissions(fileIds) {
+    console.log("FILEIDS", fileIds);
+    const res = await axios.get('/getPermissions', {params: {fileIds}});
     if (res && res.data)
         return Promise.resolve(res.data);
     return Promise.reject(res);
