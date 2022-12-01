@@ -288,7 +288,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
               try { // make api call to the Drive API to remove the permission
                 await this.drive.permissions.delete(params);
                 // now remove that permission from the updatedFilePerms array
-                updatedFilePerms = updatedFilePerms.filter(perm => {perm.id != params.fileId})
+                updatedFilePerms = updatedFilePerms.filter(perm => {perm.id != params.permissionId})
               }
               catch (e) {
                 if (e.message.indexOf("Permission not found") == -1)

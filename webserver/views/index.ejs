@@ -152,7 +152,7 @@
         }
 
         async function removeEmails() {
-            let files = JSON.parse(`<%- JSON.stringify(array)%>`);
+            // let files = JSON.parse(`<%- JSON.stringify(array)%>`);
             let removeFileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
             let removeCheckboxes = document.querySelectorAll("input[label=removeCheckBox]:checked");
             let emailsToRemove = [];
