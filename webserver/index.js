@@ -168,7 +168,7 @@ app.get("/getPermissions", checkForInit, async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
-      console.log("req.query.fileId: " + JSON.stringify(req.query));
+      // console.log("req.query.fileId: " + JSON.stringify(req));
       const fileIds = req.query.fileIds;
       console.log(fileIds);
       let retVal = [];
@@ -221,9 +221,6 @@ app.post("/deletePermissions", checkForInit, async (req, res) => {
           permissionIds,
           emails,
         });
-        console.log(
-          "files from index.js /deletePermissions: " + JSON.stringify(files)
-        );
         res.json(files);
       } catch (error) {
         console.log("ERROR", error);

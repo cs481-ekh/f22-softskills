@@ -214,11 +214,11 @@ class DrivePermissionManager implements IDrivePermissionManager {
       console.log(`In getPermissions... fileId ${s.fileId}`);
       try {
         let fileList = await this.db.files.getFileAndSubtree(s.fileId);
-        if (fileList){
+        if (fileList) {
           //console.log(fileList);
           let permissionsSet: Set<Permission> = new Set();
-          for(const file of fileList){
-            for(const perm of file.permissions){
+          for (const file of fileList) {
+            for (const perm of file.permissions) {
               permissionsSet.add(perm);
             }
           }
@@ -254,9 +254,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
         fileIds,
         reason: 'No files provided'
       });
-    console.log('index.ts 257, fileIds : ' + fileIds);
     const files: File[] = await this.db.files.readArray(fileIds);
-    console.log('index.ts 259, files : ' + JSON.stringify(files));
     if (!files || files.length == 0)
       return Promise.reject({
         fileIds,
@@ -266,50 +264,58 @@ class DrivePermissionManager implements IDrivePermissionManager {
     for (let i = 0; i < fileIds.length; i++) {
       (await this.db.files.getFileAndSubtree(fileIds[i])).forEach(f => allFiles.add(f));
     }
-    console.log('index.ts 269, allFiles : ' + JSON.stringify(allFiles));
     // if no change needs to be made, leave it
     let fileArray: File[] = Array.from(allFiles);
-    console.log('index.ts 272, fileArray : ' + JSON.stringify(fileArray));
     if (!fileArray.some(file => file.permissions && file.permissions.length > 0))
       return Promise.resolve(fileArray);
     // make the changes
+    console.log(`options: ${options}`);
     try {
       for (let i = 0; i < fileArray.length; i++) {
         if (fileArray[i].permissions && fileArray[i].permissions.length > 0) {
           let ownerPermission: Permission;
           let updatedFilePerms = fileArray[i].permissions;
+          console.log(`\nstarting permissions for ${fileArray[i].id}:`, updatedFilePerms);
           for (let j = 0; j < fileArray[i].permissions.length; j++) {
-            if(options){ // for granularity
-              if(options.emails && !options.emails.includes(fileArray[i].permissions[j].user.emailAddress)) continue;
-              if(options.permissionIds && !options.permissionIds.includes(fileArray[i].permissions[j].id)) continue;
-            }
-            // If not the file owner's permission
-            if (fileArray[i].owners[0].emailAddress !== fileArray[i].permissions[j].user.emailAddress) {
-              let params = {
-                fileId: fileArray[i].id,
-                permissionId: fileArray[i].permissions[j].id
+            // if (options) { // for granularity
+            //   if (options.emails && !options.emails.includes(fileArray[i].permissions[j].user.emailAddress)) continue;
+            //   // if (options.permissionIds && !options.permissionIds.includes(fileArray[i].permissions[j].id)) continue;
+            // }
+            if (options && options.emails && options.emails.indexOf(fileArray[i].permissions[j].user.emailAddress) > -1) {
+              console.log(`Ran for email ${fileArray[i].permissions[j].user.emailAddress}`);
+              // If not the file owner's permission
+              if (fileArray[i].owners[0].emailAddress !== fileArray[i].permissions[j].user.emailAddress) {
+                let params = {
+                  fileId: fileArray[i].id,
+                  permissionId: fileArray[i].permissions[j].id
+                }
+                try { // make api call to the Drive API to remove the permission
+                  await this.drive.permissions.delete(params);
+                  // now remove that permission from the updatedFilePerms array
+                  for (let k = 0; k < updatedFilePerms.length; k++)
+                    if (updatedFilePerms[k].id == params.permissionId) {
+                      updatedFilePerms.splice(k, 1);
+                      break;
+                    }
+                }
+                catch (e) {
+                  if (e.message.indexOf("Permission not found") == -1)
+                    return Promise.reject({
+                      fileArray,
+                      reason: `Something went wrong talking to the Drive API:\n${e}`
+                    });
+                }
               }
-              try { // make api call to the Drive API to remove the permission
-                await this.drive.permissions.delete(params);
-                // now remove that permission from the updatedFilePerms array
-                updatedFilePerms = updatedFilePerms.filter(perm => {perm.id != params.permissionId})
-                console.log('index.ts 296, updatedFilePerms : ' + JSON.stringify(updatedFilePerms));
+              else {
+                ownerPermission = fileArray[i].permissions[j];
               }
-              catch (e) {
-                if (e.message.indexOf("Permission not found") == -1)
-                  return Promise.reject({
-                    fileArray,
-                    reason: `Something went wrong talking to the Drive API:\n${e}`
-                  });
-              }
-            }
-            else {
-              ownerPermission = fileArray[i].permissions[j];
+            } else {
+              console.log(`Did not run for email ${fileArray[i].permissions[j].user.emailAddress}`);
             }
           }
+          console.log(`\nending permissions for ${fileArray[i].id}:`, updatedFilePerms)
           fileArray[i].permissions = updatedFilePerms;
-          console.log('index.ts 311, fileArray[i].permissions : ' + JSON.stringify(fileArray[i].permissions));
-          await this.db.files.update(fileArray[i]);
+          console.log(await this.db.files.update(fileArray[i]));
         }
       }
     } catch (e) {
@@ -318,7 +324,6 @@ class DrivePermissionManager implements IDrivePermissionManager {
         reason: `Something went wrong talking to the Drive API:\n${e}`
       });
     }
-    console.log('index.ts 321, fileArray : ' + JSON.stringify(fileArray));
     return Promise.resolve(fileArray);
   }
 
@@ -413,15 +418,18 @@ class DrivePermissionManager implements IDrivePermissionManager {
         reason: "Invalid grantee type"
       });
     // ensure files exist
-    const requestedFiles: File[] = await this.db.files.readArray(fileIds);
-    if (!requestedFiles || requestedFiles.length !== fileIds.length)
-      return Promise.reject({
-        fileIds,
-        role,
-        type,
-        emails,
-        reason: "File not found in database"
-      });
+    let requestedFiles: File[] = await this.db.files.readArray(fileIds);
+    if (!requestedFiles || requestedFiles.length !== fileIds.length) {
+      requestedFiles = await this.db.files.readArray(fileIds);
+      if (!requestedFiles || requestedFiles.length !== fileIds.length)
+        return Promise.reject({
+          fileIds,
+          role,
+          type,
+          emails,
+          reason: "File not found in database"
+        });
+    }
     // get all files to modify to use with db
     let filesToUpdate: File[] = [];
     for (let i = 0; i < requestedFiles.length; i++)
@@ -462,13 +470,14 @@ class DrivePermissionManager implements IDrivePermissionManager {
           const res = await this.drive.permissions.create({
             fileId: parentFiles[i].id,
             fields: "*",
-            sendNotificationEmail:false,
+            sendNotificationEmail: false,
             requestBody: {
               role,
               type,
               emailAddress: emails[j]
             }
           });
+          console.log(`${JSON.stringify(res)}`);
           if (!res)
             return Promise.reject({
               fileIds,
