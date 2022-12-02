@@ -214,11 +214,11 @@ class DrivePermissionManager implements IDrivePermissionManager {
       console.log(`In getPermissions... fileId ${s.fileId}`);
       try {
         let fileList = await this.db.files.getFileAndSubtree(s.fileId);
-        if (fileList){
+        if (fileList) {
           //console.log(fileList);
           let permissionsSet: Set<Permission> = new Set();
-          for(const file of fileList){
-            for(const perm of file.permissions){
+          for (const file of fileList) {
+            for (const perm of file.permissions) {
               permissionsSet.add(perm);
             }
           }
@@ -274,9 +274,9 @@ class DrivePermissionManager implements IDrivePermissionManager {
         if (fileArray[i].permissions && fileArray[i].permissions.length > 0) {
           let ownerPermission: Permission;
           for (let j = 0; j < fileArray[i].permissions.length; j++) {
-            if(options){ // for granularity
-              if(options.emails && !options.emails.includes(fileArray[i].permissions[j].user.emailAddress)) continue;
-              if(options.permissionIds && !options.permissionIds.includes(fileArray[i].permissions[j].id)) continue;
+            if (options) { // for granularity
+              if (options.emails && !options.emails.includes(fileArray[i].permissions[j].user.emailAddress)) continue;
+              if (options.permissionIds && !options.permissionIds.includes(fileArray[i].permissions[j].id)) continue;
             }
             if (fileArray[i].owners[0].emailAddress !== fileArray[i].permissions[j].user.emailAddress) {
               let params = {
@@ -425,32 +425,17 @@ class DrivePermissionManager implements IDrivePermissionManager {
       else if (!filesToUpdate.some(f => f.id == file.parents[0]))
         parentFiles.push(file);
     });
-    // store files in separate arrays for each tree
-    const trees: Map<string, File[]> = new Map();
-    parentFiles.forEach(parent => {
-      trees.set(parent.id, [parent]);
-      if (trees.get(parent.id).length == 0)
-        trees.get(parent.id).push(parent);
-    });
-    trees.forEach((tree, key) => {
-      const stack: File[] = Array.from(tree);
-      while (stack.length > 0) {
-        let curr: File = stack.pop();
-        if (curr.children && curr.children.length + 0)
-          curr.children.forEach(childId => {
-            let temp = filesToUpdate.find(f => f.id == childId);
-            stack.push(temp);
-            trees.get(key).push(temp);
-          });
-      }
-    });
+    let allFiles: Set<File> = new Set();
+    for (let i = 0; i < fileIds.length; i++)
+      (await this.db.files.getFileAndSubtree(fileIds[i])).forEach(f => allFiles.add(f));
+    let fileArray: File[] = Array.from(allFiles);
     try {
       // create new permissions in drive api
-      for (let i = 0; i < parentFiles.length; i++) {
+      for (let i = 0; i < fileArray.length; i++) {
         let createdPermissions: Permission[] = [];
         for (let j = 0; j < emails.length; j++) {
           const res = await this.drive.permissions.create({
-            fileId: parentFiles[i].id,
+            fileId: fileArray[i].id,
             fields: "*",
             requestBody: {
               role,
@@ -468,7 +453,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
             });
           createdPermissions.push({
             id: res.data.id,
-            fileId: parentFiles[i].id,
+            fileId: fileArray[i].id,
             type: res.data.type,
             role: res.data.role,
             deleted: res.data.deleted,
@@ -483,26 +468,19 @@ class DrivePermissionManager implements IDrivePermissionManager {
           await this.db.permissions.create(createdPermissions[createdPermissions.length - 1]);
         }
         // update db
-        let tree: File[] = trees.get(parentFiles[i].id);
-        for (let j = 0; j < tree.length; j++) {
-          // overwrite old permissions for the same user
-          for (let k = 0; k < tree[j].permissions.length; k++)
-            if (createdPermissions.some(p => tree[j].permissions[k].user.emailAddress == p.user.emailAddress))
-              tree[j].permissions.splice(k--, 1);
-          tree[j].permissions = tree[j].permissions.concat(createdPermissions);
-          const res = await this.db.files.update(tree[j]);
-          if (!tree[j])
-            return Promise.reject({
-              fileIds,
-              role,
-              type,
-              emails,
-              reason: "There was a problem saving the changes in the database."
-            });
-        }
+        for (let j = 0; j < createdPermissions.length; j++)
+          if (!fileArray[i].permissions.some(p => p.id == createdPermissions[j].id))
+            fileArray[i].permissions.push(createdPermissions[j]);
+        const file: File = await this.db.files.update(fileArray[i]);
+        if (!file)
+          return Promise.reject({
+            fileIds,
+            role,
+            type,
+            emails,
+            reason: "There was a problem saving the changes in the database."
+          });
       }
-      filesToUpdate = [];
-      trees.forEach(tree => filesToUpdate = filesToUpdate.concat(tree));
     } catch (e) {
       return Promise.reject({
         fileIds,
@@ -512,7 +490,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
         reason: "Drive API request failed or was rejected:\n" + e
       });
     }
-    return Promise.resolve(filesToUpdate);
+    return Promise.resolve(fileArray);
   }
 
   async addPermission(fileId: string, role: Role, type: GranteeType, s?: string): Promise<Permission> {
