@@ -1,5 +1,6 @@
-require('dotenv').config();
-const DrivePermissionManager = require("../dist/drive-permission-manager/src/").default;
+require("dotenv").config();
+const DrivePermissionManager =
+  require("../dist/drive-permission-manager/src/").default;
 /* Express Configuration */
 const port = process.env.PORT || 3000;
 const express = require("express");
@@ -7,11 +8,13 @@ const app = express();
 const session = require("express-session");
 app.use(express.static("public")); // For custom style sheet
 app.use(express.static("scripts")); // for custom typescript scripts
-app.use(express.urlencoded({ extended: true }))
-app.use(express.json())
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 /*  PASSPORT SETUP  */
-process.env.PASSPORT_SESSION_SECRET = require('crypto').randomBytes(32).toString('hex');
+process.env.PASSPORT_SESSION_SECRET = require("crypto")
+  .randomBytes(32)
+  .toString("hex");
 app.use(
   session({
     resave: true,
@@ -74,9 +77,10 @@ const checkForInit = async (req, res, next) => {
       // Determine if this is the user account to populate the db with
       if (req.user._json.email != process.env.GDRIVE_EMAIL) {
         // Its not the right google drive account / email so redirect and let them know
-        res.redirect("/login?error=user-email-does-not-match-expected-initialization-email");
-      }
-      else {
+        res.redirect(
+          "/login?error=user-email-does-not-match-expected-initialization-email"
+        );
+      } else {
         setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
         const client = new DrivePermissionManager(oauth2Client);
         await client.initDb();
@@ -88,15 +92,15 @@ const checkForInit = async (req, res, next) => {
     else {
       next();
     }
+  } else {
+    // Failed to authenticate the request so redirect to login route
+    res.redirect("/login");
   }
-  else { // Failed to authenticate the request so redirect to login route
-    res.redirect('/login');
-  }
-}
+};
 /* GENERAL ROUTE HANDLING */
 app.get("/", checkForInit, function (req, res) {
-  if (req.isAuthenticated()) res.redirect('/success');
-  else res.redirect('/login');
+  if (req.isAuthenticated()) res.redirect("/success");
+  else res.redirect("/login");
 });
 
 app.get("/login", (req, res) => {
@@ -146,16 +150,16 @@ app.get("/getFiles", checkForInit, async (req, res) => {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
       const client = new DrivePermissionManager(oauth2Client);
       let fileList;
-      if (req.query.fileIds) fileList = await client.getFiles([req.query.fileIds].flat())
+      if (req.query.fileIds)
+        fileList = await client.getFiles([req.query.fileIds].flat());
       else fileList = await client.getFiles();
       res.json(fileList);
     } catch (e) {
       res.json(e);
       console.log(e);
     }
-  }
-  else {
-    res.redirect('/login');
+  } else {
+    res.redirect("/login");
   }
 });
 
@@ -164,28 +168,24 @@ app.get("/getPermissions", checkForInit, async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
-      console.log('req.query.fileId: ' + JSON.stringify(req.query));
+      console.log("req.query.fileId: " + JSON.stringify(req.query));
       const fileIds = req.query.fileIds;
       console.log(fileIds);
       let retVal = [];
       const client = new DrivePermissionManager(oauth2Client);
-      for(const fileId of fileIds){
-        let permissionsList = await client.getPermissions({fileId});
-        for(const permission of permissionsList){
+      for (const fileId of fileIds) {
+        let permissionsList = await client.getPermissions({ fileId });
+        for (const permission of permissionsList) {
           retVal.push(permission);
         }
       }
       res.json(retVal);
-    }
-    catch (e) {
+    } catch (e) {
       console.log("ERROR", e);
       res.sendStatus(403);
     }
-  }
-  else res.redirect("/success");
+  } else res.redirect("/success");
 });
-
-
 
 // deletePermission
 app.post("/deletePermission", checkForInit, async (req, res) => {
@@ -196,20 +196,16 @@ app.post("/deletePermission", checkForInit, async (req, res) => {
       const client = new DrivePermissionManager(oauth2Client);
       try {
         await client.deletePermission(fileId, permissionId);
-      }
-      catch (error) {
+      } catch (error) {
         if (error.reason == "Failed to update db.") {
-          res.sendStatus(500).json({ fileId, permissionId, error })
-        }
-        else res.sendStatus(400).json({ fileId, permissionId, error })
+          res.sendStatus(500).json({ fileId, permissionId, error });
+        } else res.sendStatus(400).json({ fileId, permissionId, error });
       }
-    }
-    catch (e) {
+    } catch (e) {
       res.json(e);
       console.log("ERROR", e);
     }
-  }
-  else res.redirect("/login");
+  } else res.redirect("/login");
 });
 
 // deletePermissions
@@ -221,23 +217,25 @@ app.post("/deletePermissions", checkForInit, async (req, res) => {
       const client = new DrivePermissionManager(oauth2Client);
       try {
         // returns an array of all updated files
-        let files = await client.deletePermissions(fileIds, {permissionIds,emails});
+        let files = await client.deletePermissions(fileIds, {
+          permissionIds,
+          emails,
+        });
+        console.log(
+          "files from index.js /deletePermissions: " + JSON.stringify(files)
+        );
         res.json(files);
-      }
-      catch (error) {
+      } catch (error) {
         console.log("ERROR", error);
         if (error.reason == "Failed to update db.") {
-          res.sendStatus(500).json({ fileIds, permissionId, error })
-        }
-        else res.sendStatus(400).json({ fileIds, permissionId, error })
+          res.sendStatus(500).json({ fileIds, permissionIds, error });
+        } else res.sendStatus(400).json({ fileIds, permissionIds, error });
       }
-    }
-    catch (e) {
+    } catch (e) {
       res.json(e);
       console.log("ERROR", e);
     }
-  }
-  else res.redirect("/login");
+  } else res.redirect("/login");
 });
 
 // addPermissions
@@ -249,16 +247,16 @@ app.post("/addPermission", checkForInit, async (req, res) => {
       const client = new DrivePermissionManager(oauth2Client);
       const resVal = [];
       for (const email of emails) {
-        resVal.push(await client.addPermission(fileId, role, granteeType, email));
+        resVal.push(
+          await client.addPermission(fileId, role, granteeType, email)
+        );
       }
       res.json(resVal);
-    }
-    catch (e) {
+    } catch (e) {
       res.json(e);
       console.log("ERROR", e);
     }
-  }
-  else res.sendStatus(401);
+  } else res.sendStatus(401);
 });
 
 // returns array of updated file objects
@@ -267,17 +265,22 @@ app.post("/addPermissions", checkForInit, async (req, res) => {
     try {
       const { fileIds, role, granteeType, emails } = req.body;
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
-      const dpmRes = await new DrivePermissionManager(oauth2Client).addPermissions(fileIds, role, granteeType, emails);
+      const dpmRes = await new DrivePermissionManager(
+        oauth2Client
+      ).addPermissions(fileIds, role, granteeType, emails);
       res.json(dpmRes);
     } catch (e) {
       res.json(e);
       console.error("ERROR", e);
     }
-  } else
-    res.sendStatus(401);
+  } else res.sendStatus(401);
 });
 
-app.get('*', (req, res) => res.send(`<h1>404</h1><image src="https://thumbs.gfycat.com/AccurateUnfinishedBergerpicard-size_restricted.gif">`));
+app.get("*", (req, res) =>
+  res.send(
+    `<h1>404</h1><image src="https://thumbs.gfycat.com/AccurateUnfinishedBergerpicard-size_restricted.gif">`
+  )
+);
 
 app.listen(port, async () => {
   console.log("App listening on port " + port);

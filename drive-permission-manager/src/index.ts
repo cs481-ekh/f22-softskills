@@ -254,7 +254,9 @@ class DrivePermissionManager implements IDrivePermissionManager {
         fileIds,
         reason: 'No files provided'
       });
+    console.log('index.ts 257, fileIds : ' + fileIds);
     const files: File[] = await this.db.files.readArray(fileIds);
+    console.log('index.ts 259, files : ' + JSON.stringify(files));
     if (!files || files.length == 0)
       return Promise.reject({
         fileIds,
@@ -264,8 +266,10 @@ class DrivePermissionManager implements IDrivePermissionManager {
     for (let i = 0; i < fileIds.length; i++) {
       (await this.db.files.getFileAndSubtree(fileIds[i])).forEach(f => allFiles.add(f));
     }
+    console.log('index.ts 269, allFiles : ' + JSON.stringify(allFiles));
     // if no change needs to be made, leave it
     let fileArray: File[] = Array.from(allFiles);
+    console.log('index.ts 272, fileArray : ' + JSON.stringify(fileArray));
     if (!fileArray.some(file => file.permissions && file.permissions.length > 0))
       return Promise.resolve(fileArray);
     // make the changes
@@ -289,6 +293,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
                 await this.drive.permissions.delete(params);
                 // now remove that permission from the updatedFilePerms array
                 updatedFilePerms = updatedFilePerms.filter(perm => {perm.id != params.permissionId})
+                console.log('index.ts 296, updatedFilePerms : ' + JSON.stringify(updatedFilePerms));
               }
               catch (e) {
                 if (e.message.indexOf("Permission not found") == -1)
@@ -303,6 +308,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
             }
           }
           fileArray[i].permissions = updatedFilePerms;
+          console.log('index.ts 311, fileArray[i].permissions : ' + JSON.stringify(fileArray[i].permissions));
           await this.db.files.update(fileArray[i]);
         }
       }
@@ -312,6 +318,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
         reason: `Something went wrong talking to the Drive API:\n${e}`
       });
     }
+    console.log('index.ts 321, fileArray : ' + JSON.stringify(fileArray));
     return Promise.resolve(fileArray);
   }
 
@@ -455,6 +462,7 @@ class DrivePermissionManager implements IDrivePermissionManager {
           const res = await this.drive.permissions.create({
             fileId: parentFiles[i].id,
             fields: "*",
+            sendNotificationEmail:false,
             requestBody: {
               role,
               type,

@@ -93,17 +93,19 @@
                 titleOwner = titleOwner + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(previewFile, 'owners[0].emailAddress') + '</a></li>'
                 titleOwner = titleOwner + '</ul>' + '</div>';
                 let filePermissions = [];
-                filePermissions = _.get(previewFile, 'permissions');
                 let accessList = [];
-                for (let index = 0; index < filePermissions.length; index++) {
-                    if (_.get(filePermissions[index], 'user.displayName') !== "drive-permission-manager@driver-permission-manager.iam.gserviceaccount.com" && _.get(previewFile, 'owners[0].displayName') !== _.get(filePermissions[index], 'user.displayName')) {
-                        let accessHolder = '<div name="info" class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' + _.get(filePermissions[index], 'user.displayName') + '<span class="caret"></span></button>'
-                        accessHolder = accessHolder + '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">'
-                        accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(filePermissions[index], 'user.emailAddress') + '</a></li>'
-                        accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>ROLE: </b>' + _.get(filePermissions[index], 'role') + '</a></li>'
-                        accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EXPIRES: </b>' + _.get(filePermissions[index], 'expirationDate') + '</a></li>'
-                        accessHolder = accessHolder + '</ul>' + '</div>'
-                        accessList = accessList + accessHolder;
+                filePermissions = _.get(previewFile, 'permissions');
+                if (typeof (filePermissions) !== "undefined") {
+                    for (let index = 0; index < filePermissions.length; index++) {
+                        if (_.get(filePermissions[index], 'user.displayName') !== "drive-permission-manager@driver-permission-manager.iam.gserviceaccount.com" && _.get(previewFile, 'owners[0].displayName') !== _.get(filePermissions[index], 'user.displayName')) {
+                            let accessHolder = '<div name="info" class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' + _.get(filePermissions[index], 'user.displayName') + '<span class="caret"></span></button>'
+                            accessHolder = accessHolder + '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">'
+                            accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(filePermissions[index], 'user.emailAddress') + '</a></li>'
+                            accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>ROLE: </b>' + _.get(filePermissions[index], 'role') + '</a></li>'
+                            accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EXPIRES: </b>' + _.get(filePermissions[index], 'expirationDate') + '</a></li>'
+                            accessHolder = accessHolder + '</ul>' + '</div>'
+                            accessList = accessList + accessHolder;
+                        }
                     }
                 }
                 document.getElementById('list').innerHTML = '';
@@ -152,12 +154,11 @@
         }
 
         async function removeEmails() {
-            // let files = JSON.parse(`<%- JSON.stringify(array)%>`);
             let removeFileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
             let removeCheckboxes = document.querySelectorAll("input[label=removeCheckBox]:checked");
             let emailsToRemove = [];
             let fileIds = [];
-            let fileIdsToRemoveFrom = []
+            let fileIdsToRemoveFrom = [];
             let matchedFiles = [];
             let permissionIdsToRemove = [];
 
@@ -165,35 +166,39 @@
                 emailsToRemove.push(removeCheckboxes[i].value);
             }
 
+            console.log('index.ejs 169, removeFileIds: ' + removeFileIds.toString());
+
             for (let i = 0; i < removeFileIds.length; i++) {
+                console.log('index.ejs 172, removeFileIds[i].parentElement.parentElement.id: ' + removeFileIds[i].parentElement.parentElement.id)
                 fileIds.push(removeFileIds[i].parentElement.parentElement.id);
             }
 
+            console.log('index.ejs 178, fileIds: ' + fileIds);
+
             getPermissions(fileIds).then(res => {
                 if (res) {
-                    console.log(JSON.stringify(res));
                     for (const permission of res) {
-                        if (permission.role !== 'owner') {
+                        if (permission.role !== 'owner' && emailsToRemove.includes(permission.user.emailAddress)) {
                             permissionIdsToRemove.push(permission.id);
-                            console.log(permission.id)
-                            console.log('fileId: ' + permission.fileId)
-                            fileIdsToRemoveFrom.push(permission.fileId);
+                            // fileIdsToRemoveFrom.push(permission.fileId);
+                            console.log('index.ejs 187, permissionIdsToRemove: ' + permissionIdsToRemove);
+                            // console.log('index.ejs 188, fileIdsToRemoveFrom: ' + fileIdsToRemoveFrom);
                         }
                     }
                     permissionIdsToRemove = Array.from(new Set(permissionIdsToRemove));
-                    fileIdsToRemoveFrom = Array.from(new Set(fileIdsToRemoveFrom));
-                    console.log(permissionIdsToRemove);
-                    console.log(fileIdsToRemoveFrom);
-                    requestRemovePermissions(fileIdsToRemoveFrom, permissionIdsToRemove).then(res => {
+                    // fileIdsToRemoveFrom = Array.from(new Set(fileIdsToRemoveFrom));
+                    console.log('index.ejs 191, permissionsIdsToRemove: ' + permissionIdsToRemove);
+                    // console.log('index.ejs 192, fileIdsToRemoveFrom: ' + fileIdsToRemoveFrom);
+                    requestRemovePermissions(fileIds, permissionIdsToRemove).then(res => {
                         if (res) {
                             console.log(JSON.stringify(res));
                             res.forEach(file => {
                                 for (let i = 0; i < files.length; i++) {
                                     if (files[i].id == file.id) {
-                                        console.log('file from res: ' + JSON.stringify(file));
-                                        console.log('files[i] before: ' + JSON.stringify(files[i]));
+                                        console.log('index.ejs 199, /requestRemovePermissions file from res: ' + JSON.stringify(file));
+                                        console.log('index.ejs 200, global files[i] before: ' + JSON.stringify(files[i]));
                                         files[i] = file;
-                                        console.log('files[i] after: ' + JSON.stringify(files[i]));
+                                        console.log('index.ejs 202, global files[i] after: ' + JSON.stringify(files[i]));
                                         break;
                                     }
                                 }
@@ -213,10 +218,6 @@
                     console.log('no res from getPermissions');
                 }
             });
-
-
-
-
         }
     </script>
 
@@ -484,49 +485,49 @@
             }
 
             const box = document.getElementById('box');
-            const setPermission = async (fileIds) => {
-                const url = `/deletePermissions`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        fileIds: fileIds
-                    })
-                });
-                if (response.status !== 200) {
-                    throw new Error('Error setting permission');
-                }
-            }
+            // const setPermission = async (fileIds) => {
+            //     const url = `/deletePermissions`;
+            //     const response = await fetch(url, {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json',
+            //         },
+            //         body: JSON.stringify({
+            //             fileIds: fileIds
+            //         })
+            //     });
+            //     if (response.status !== 200) {
+            //         throw new Error('Error setting permission');
+            //     }
+            // }
 
-            function removePermission() {
-                const fileIds = [];
-                const checkBoxes = document.getElementsByClassName('checkbox');
-                const isChecked = Array.from(checkBoxes).filter((checkbox) => checkbox.checked);
-                isChecked.forEach((file) => {
-                    fileIds.push(file.parentElement.parentElement.id);
-                });
-                requestRemovePermissions(fileIds).then(res => {
-                    if (res) {
-                        res.forEach(file => {
-                            for (let i = 0; i < files.length; i++) {
-                                if (files[i].id == file.id) {
-                                    files[i] = file;
-                                    break;
-                                }
-                            }
-                        })
-                        isChecked.forEach((file) => {
-                            file.checked = false;
-                            file.parentElement.style.backgroundColor = '#7ECDFA';
-                        });
-                        document.getElementById('list').innerHTML = '';
-                    } else {
-                        console.log("no res for removePermission");
-                    }
-                });
-            }
+            // function removePermission() {
+            //     const fileIds = [];
+            //     const checkBoxes = document.getElementsByClassName('checkbox');
+            //     const isChecked = Array.from(checkBoxes).filter((checkbox) => checkbox.checked);
+            //     isChecked.forEach((file) => {
+            //         fileIds.push(file.parentElement.parentElement.id);
+            //     });
+            //     requestRemovePermissions(fileIds).then(res => {
+            //         if (res) {
+            //             res.forEach(file => {
+            //                 for (let i = 0; i < files.length; i++) {
+            //                     if (files[i].id == file.id) {
+            //                         files[i] = file;
+            //                         break;
+            //                     }
+            //                 }
+            //             })
+            //             isChecked.forEach((file) => {
+            //                 file.checked = false;
+            //                 file.parentElement.style.backgroundColor = '#7ECDFA';
+            //             });
+            //             document.getElementById('list').innerHTML = '';
+            //         } else {
+            //             console.log("no res for removePermission");
+            //         }
+            //     });
+            // }
             // Add the root parent folders to the root container to start
             rootParents.forEach((parent) => {
                 box.appendChild(createButton(parent, ['parent']));
