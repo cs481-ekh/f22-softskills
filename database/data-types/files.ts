@@ -438,7 +438,7 @@ export class Files {
                     children: res.rows[r].children,
                     owners: res.rows[r].owners,
                     permissions: res.rows[r].permissions,
-                    mimeType: res.rows[0].mimetype
+                    mimeType: res.rows[r].mimetype
                 };
                 file.permissions = await this.permissions.readArray(res.rows[r].permissions);
                 let children: File[] = [];

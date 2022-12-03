@@ -211,20 +211,16 @@ class DrivePermissionManager implements IDrivePermissionManager {
   async getPermissions(s: GetPermissionsOptions): Promise<Permission[]> {
     // By File Id
     if ("fileId" in s) {
-      console.log(`In getPermissions... fileId ${s.fileId}`);
       try {
         let fileList = await this.db.files.getFileAndSubtree(s.fileId);
         if (fileList) {
-          //console.log(fileList);
           let permissionsSet: Set<Permission> = new Set();
           for (const file of fileList) {
             for (const perm of file.permissions) {
               permissionsSet.add(perm);
             }
           }
-          console.log(permissionsSet);
           let retVal = Array.from(permissionsSet);
-          console.log(retVal);
           return Promise.resolve(retVal);
         }
         else return Promise.reject({ ...s, reason: "File not found." })
@@ -273,33 +269,44 @@ class DrivePermissionManager implements IDrivePermissionManager {
       for (let i = 0; i < fileArray.length; i++) {
         if (fileArray[i].permissions && fileArray[i].permissions.length > 0) {
           let ownerPermission: Permission;
+          let updatedFilePerms = fileArray[i].permissions;
           for (let j = 0; j < fileArray[i].permissions.length; j++) {
-            if (options) { // for granularity
-              if (options.emails && !options.emails.includes(fileArray[i].permissions[j].user.emailAddress)) continue;
-              if (options.permissionIds && !options.permissionIds.includes(fileArray[i].permissions[j].id)) continue;
-            }
-            if (fileArray[i].owners[0].emailAddress !== fileArray[i].permissions[j].user.emailAddress) {
-              let params = {
-                fileId: fileArray[i].id,
-                permissionId: fileArray[i].permissions[j].id
+            // if (options) { // for granularity
+            //   if (options.emails && !options.emails.includes(fileArray[i].permissions[j].user.emailAddress)) continue;
+            //   // if (options.permissionIds && !options.permissionIds.includes(fileArray[i].permissions[j].id)) continue;
+            // }
+            if (options && options.emails && options.emails.indexOf(fileArray[i].permissions[j].user.emailAddress) > -1) {
+              // If not the file owner's permission
+              if (fileArray[i].owners[0].emailAddress !== fileArray[i].permissions[j].user.emailAddress) {
+                let params = {
+                  fileId: fileArray[i].id,
+                  permissionId: fileArray[i].permissions[j].id
+                }
+                try { // make api call to the Drive API to remove the permission
+                  await this.drive.permissions.delete(params);
+                  // now remove that permission from the updatedFilePerms array
+                  for (let k = 0; k < updatedFilePerms.length; k++)
+                    if (updatedFilePerms[k].id == params.permissionId) {
+                      updatedFilePerms.splice(k, 1);
+                      j--;
+                      break;
+                    }
+                }
+                catch (e) {
+                  console.error('error', e);
+                  if (e.message.indexOf("Permission not found") == -1)
+                    return Promise.reject({
+                      fileArray,
+                      reason: `Something went wrong talking to the Drive API:\n${e}`
+                    });
+                }
               }
-              try {
-                await this.drive.permissions.delete(params);
-              } catch (e) {
-                if (e.message.indexOf("Permission not found") == -1)
-                  return Promise.reject({
-                    fileArray,
-                    reason: `Something went wrong talking to the Drive API:\n${e}`
-                  });
+              else {
+                ownerPermission = fileArray[i].permissions[j];
               }
-            } else {
-              ownerPermission = fileArray[i].permissions[j];
             }
           }
-          if (ownerPermission)
-            fileArray[i].permissions = [ownerPermission];
-          else
-            fileArray[i].permissions = [];
+          fileArray[i].permissions = updatedFilePerms;
           await this.db.files.update(fileArray[i]);
         }
       }
