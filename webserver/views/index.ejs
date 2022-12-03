@@ -30,7 +30,6 @@
 
 <body>
     <script>
-
         /**
         * @brief Given an array of emails and a role type, this function will add the permission with the selected role to all the users with the corresponding emails.
         * In this function emails, role, and fileIds are obtained byt querying the DOM. The requestAddPermissions function is called to send the request to the server, and
@@ -91,6 +90,7 @@
                     } else {
                         console.warn("no res for addPermission");
                     }
+
                 }
             );
         }
@@ -531,93 +531,99 @@
 
                 // if a parent and has children add folder icon
                 let folderIcon = document.createElement('icon');
-                switch (file.mimeType) {
-                    case 'application/vnd.google-apps.folder':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'folder';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.file':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'insert_drive_file';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.document':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'description';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.spreadsheet':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'table_chart';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.presentation':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'slideshow';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.drawing':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'insert_photo';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.form':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'assignment';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.map':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'map';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.photo':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'photo';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.script':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'code';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.site':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'web';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.video':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'video_library';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.audio':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'audiotrack';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.unknown':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'help';
-                        container.appendChild(folderIcon) / get
-                        break;
-                    case 'application/vnd.google-apps.drive-sdk':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'help';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.jam':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'help';
-                        container.appendChild(folderIcon)
-                        break;
-                    default:
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'insert_drive_file';
-                        container.appendChild(folderIcon)
-                        break;
-                }
+                // if (file.children && file.children.length > 0) {
+                //     folderIcon.className = 'material-icons';
+                //     folderIcon.textContent = 'folder';
+                //     container.appendChild(folderIcon);
+                // } else {
+                    switch (file.mimeType) {
+                        case 'application/vnd.google-apps.folder':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'folder';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.file':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'insert_drive_file';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.document':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'description';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.spreadsheet':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'table_chart';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.presentation':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'slideshow';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.drawing':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'insert_photo';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.form':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'assignment';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.map':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'map';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.photo':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'photo';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.script':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'code';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.site':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'web';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.video':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'video_library';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.audio':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'audiotrack';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.unknown':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'help';
+                            container.appendChild(folderIcon) / get
+                            break;
+                        case 'application/vnd.google-apps.drive-sdk':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'help';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.jam':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'help';
+                            container.appendChild(folderIcon)
+                            break;
+                        default:
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'insert_drive_file';
+                            container.appendChild(folderIcon)
+                            break;
+                    }
+                // }
 
                 container.appendChild(label);
                 button.addEventListener('click', onClickHandler);
@@ -665,7 +671,6 @@
                 });
                 return buttonContainer;
             }
-
             const box = document.getElementById('box');
             rootParents.forEach((parent) => {
                 box.appendChild(createButton(parent, ['parent']));
