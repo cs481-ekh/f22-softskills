@@ -147,7 +147,7 @@
                     "</h2>" +
                     "</p>";
                 let filePermissions = [];
-                let uniqueFilePermissions =[];
+                let uniqueFilePermissions = [];
                 let accessList = [];
                 //owner information drop down
                 ownerDropDown =
@@ -178,15 +178,15 @@
                     }
                 });
 
-                for(let i=0; i < filePermissions.length; i++){
+                for (let i = 0; i < filePermissions.length; i++) {
                     let unique = true;
-                    for(let j=0; j < uniqueFilePermissions.length; j++){
-                        if(filePermissions[i].user.emailAddress == uniqueFilePermissions[j].user.emailAddress){
+                    for (let j = 0; j < uniqueFilePermissions.length; j++) {
+                        if (filePermissions[i].user.emailAddress == uniqueFilePermissions[j].user.emailAddress) {
                             unique = false;
                             break;
                         }
                     }
-                    if(unique){
+                    if (unique) {
                         uniqueFilePermissions.push(filePermissions[i]);
                     }
                 }
@@ -452,9 +452,20 @@
                 // Stop click event from propagating up the DOM tree and clicking other buttons
                 event.stopPropagation();
                 // Select the button's parent (button container) and all its children nodes
-                const fileId = event.target.parentNode.id;
+                let fileId = [];
+                if (event.target.parentNode.id) {
+                    fileId = event.target.parentNode.id;
+                    console.log("event.target.parentNode is not null: " + fileId);
+
+                }
+                else {
+                    fileId = event.target.parentNode.parentNode.parentNode.id;
+                    console.log("event.target.parentNode is null: " + fileId);
+              
+                }
                 getGrandchildren(fileId).then(res => res.forEach(f => files.push(f)));
                 preview(files, fileId);
+                console.log('fileId', fileId);
                 const buttonContainer = document.getElementById(fileId);
                 const containerNodes = buttonContainer.children;
                 if (containerNodes && Array.from(containerNodes).length > 1) {
