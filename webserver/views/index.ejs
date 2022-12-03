@@ -268,91 +268,46 @@
          */
 
         async function removeEmails() {
-            let fileIdArray = Array.from(
-                document.querySelectorAll("input[name=fileCheckBoxes]:checked")
-            );
-            let checkboxQuery = document.querySelectorAll(
-                "input[label=removeCheckBox]:checked"
-            );
+            /**
+             * NOTES:
+             * - remove uneccesary getPermissions call
+             *  - use emails, not permission ids
+             * - pass selected file ids to removeEmails from emailRemoveList?
+             */
+            let removeFileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
+            let removeCheckboxes = document.querySelectorAll("input[label=removeCheckBox]:checked");
             let emailsToRemove = [];
             let fileIds = [];
-            // let fileIdsToRemoveFrom = [];
-            let permissionIdsToRemove = [];
-            for (let i = 0; i < checkboxQuery.length; i++) {
-                emailsToRemove.push(checkboxQuery[i].value);
+
+            for (let i = 0; i < removeCheckboxes.length; i++) {
+                emailsToRemove.push(removeCheckboxes[i].value);
             }
-            console.log("index.ejs 169, fileIdArray: " + fileIdArray.toString());
-            for (let i = 0; i < fileIdArray.length; i++) {
-                console.log(
-                    "index.ejs 172, fileIdArray[i].parentElement.parentElement.id: " +
-                    fileIdArray[i].parentElement.parentElement.id
-                );
-                fileIds.push(fileIdArray[i].parentElement.parentElement.id);
+
+            for (let i = 0; i < removeFileIds.length; i++) {
+                fileIds.push(removeFileIds[i].parentElement.parentElement.id);
             }
-            console.log("index.ejs 178, fileIds: " + fileIds);
-            //get all permissions for the selected files
-            getPermissions(fileIds).then((res) => {
+
+            console.log("emails: ", emailsToRemove);
+
+            requestRemovePermissions(fileIds, emailsToRemove, null).then(res => {
                 if (res) {
-                    for (const permission of res) {
-                        //if the permission is not the owner and the email matches one of the emails the user selected to remove
-                        if (
-                            permission.role !== "owner" &&
-                            emailsToRemove.includes(permission.user.emailAddress)
-                        ) {
-                            permissionIdsToRemove.push(permission.id);
-                            // fileIdsToRemoveFrom.push(permission.fileId);
-                            console.log(
-                                "index.ejs 187, permissionIdsToRemove: " + permissionIdsToRemove
-                            );
-                            // console.log('index.ejs 188, fileIdsToRemoveFrom: ' + fileIdsToRemoveFrom);
+                    console.log(JSON.stringify(res));
+                    res.forEach(file => {
+                        for (let i = 0; i < files.length; i++) {
+                            if (files[i].id == file.id) {
+                                files[i] = file;
+                                break;
+                            }
                         }
-                    }
-                    //ensures the permissions are unique
-                    permissionIdsToRemove = Array.from(new Set(permissionIdsToRemove));
-                    // fileIdsToRemoveFrom = Array.from(new Set(fileIdsToRemoveFrom));
-                    console.log(
-                        "index.ejs 191, permissionsIdsToRemove: " + permissionIdsToRemove
-                    );
-                    // console.log('index.ejs 192, fileIdsToRemoveFrom: ' + fileIdsToRemoveFrom);
-                    //selected users are removed from the selected files and all of their children and grandchildren. Posts to /deletePermissions on the server.
-                    requestRemovePermissions(fileIds, permissionIdsToRemove).then((res) => {
-                        if (res) {
-                            console.log(JSON.stringify(res));
-                            //updates global file array with corrseponding files in the server response
-                            res.forEach((file) => {
-                                for (let i = 0; i < files.length; i++) {
-                                    if (files[i].id == file.id) {
-                                        console.log(
-                                            "index.ejs 199, /requestRemovePermissions file from res: " +
-                                            JSON.stringify(file)
-                                        );
-                                        console.log(
-                                            "index.ejs 200, global files[i] before: " +
-                                            JSON.stringify(files[i])
-                                        );
-                                        files[i] = file;
-                                        console.log(
-                                            "index.ejs 202, global files[i] after: " +
-                                            JSON.stringify(files[i])
-                                        );
-                                        break;
-                                    }
-                                }
-                            });
-                            //unchecks all files in enum pane and reverts color to default
-                            const isChecked = fileIdArray;
-                            isChecked.forEach((file) => {
-                                file.checked = false;
-                                file.parentElement.style.backgroundColor = "#7ECDFA";
-                            });
-                            //clears preview pane
-                            document.getElementById("list").innerHTML = "";
-                        } else {
-                            console.log("no res for requestRemovePermissions");
-                        }
+                    })
+                    const isChecked = removeFileIds;
+                    isChecked.forEach((file) => {
+                        file.checked = false;
+                        file.parentElement.style.backgroundColor = '#7ECDFA';
                     });
+                    document.getElementById('list').innerHTML = '';
                 } else {
-                    console.log("no res from getPermissions");
+                    console.log("no res for requestRemovePermissions");
                 }
             });
         }

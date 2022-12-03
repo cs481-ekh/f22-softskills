@@ -49,13 +49,15 @@ async function requestAddPermissions(fileIds, role, granteeType, emails) {
  * strip all permissions from the given files
  *
  * @param {string[]} fileIds - Array of file ids to remove permissions from
+ * @param {string[]} emails - Array of emails to remove from selected files
  * @param {string[]} permissionIds - Array of permission ids to remove from selected files
  * @returns - Array of all updated file objects, including children
  */
-async function requestRemovePermissions(fileIds, permissionIds) {
-  const params = { fileIds, permissionIds };
+async function requestRemovePermissions(fileIds, emails, permissionIds) {
+  const params = { fileIds, emails, permissionIds };
   const res = await axios.post("/deletePermissions", params);
-  if (res && res.data) return Promise.resolve(res.data);
+  if (res && res.data)
+    return Promise.resolve(res.data);
   return Promise.reject(res);
 }
 
@@ -68,8 +70,8 @@ async function requestRemovePermissions(fileIds, permissionIds) {
  */
 async function getPermissions(fileIds) {
   console.log("FILEIDS", fileIds);
-  const res = await axios.get('/getPermissions', {params: {fileIds}});
+  const res = await axios.get('/getPermissions', { params: { fileIds } });
   if (res && res.data)
-      return Promise.resolve(res.data);
+    return Promise.resolve(res.data);
   return Promise.reject(res);
 }
