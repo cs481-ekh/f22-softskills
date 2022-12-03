@@ -211,20 +211,16 @@ class DrivePermissionManager implements IDrivePermissionManager {
   async getPermissions(s: GetPermissionsOptions): Promise<Permission[]> {
     // By File Id
     if ("fileId" in s) {
-      console.log(`In getPermissions... fileId ${s.fileId}`);
       try {
         let fileList = await this.db.files.getFileAndSubtree(s.fileId);
         if (fileList) {
-          //console.log(fileList);
           let permissionsSet: Set<Permission> = new Set();
           for (const file of fileList) {
             for (const perm of file.permissions) {
               permissionsSet.add(perm);
             }
           }
-          console.log(permissionsSet);
           let retVal = Array.from(permissionsSet);
-          console.log(retVal);
           return Promise.resolve(retVal);
         }
         else return Promise.reject({ ...s, reason: "File not found." })
@@ -275,14 +271,12 @@ class DrivePermissionManager implements IDrivePermissionManager {
         if (fileArray[i].permissions && fileArray[i].permissions.length > 0) {
           let ownerPermission: Permission;
           let updatedFilePerms = fileArray[i].permissions;
-          console.log(`\nstarting permissions for ${fileArray[i].id}:`, updatedFilePerms);
           for (let j = 0; j < fileArray[i].permissions.length; j++) {
             // if (options) { // for granularity
             //   if (options.emails && !options.emails.includes(fileArray[i].permissions[j].user.emailAddress)) continue;
             //   // if (options.permissionIds && !options.permissionIds.includes(fileArray[i].permissions[j].id)) continue;
             // }
             if (options && options.emails && options.emails.indexOf(fileArray[i].permissions[j].user.emailAddress) > -1) {
-              console.log(`Ran for email ${fileArray[i].permissions[j].user.emailAddress}`);
               // If not the file owner's permission
               if (fileArray[i].owners[0].emailAddress !== fileArray[i].permissions[j].user.emailAddress) {
                 let params = {
@@ -295,10 +289,12 @@ class DrivePermissionManager implements IDrivePermissionManager {
                   for (let k = 0; k < updatedFilePerms.length; k++)
                     if (updatedFilePerms[k].id == params.permissionId) {
                       updatedFilePerms.splice(k, 1);
+                      j--;
                       break;
                     }
                 }
                 catch (e) {
+                  console.error('error', e);
                   if (e.message.indexOf("Permission not found") == -1)
                     return Promise.reject({
                       fileArray,
@@ -309,13 +305,10 @@ class DrivePermissionManager implements IDrivePermissionManager {
               else {
                 ownerPermission = fileArray[i].permissions[j];
               }
-            } else {
-              console.log(`Did not run for email ${fileArray[i].permissions[j].user.emailAddress}`);
             }
           }
-          console.log(`\nending permissions for ${fileArray[i].id}:`, updatedFilePerms)
           fileArray[i].permissions = updatedFilePerms;
-          console.log(await this.db.files.update(fileArray[i]));
+          await this.db.files.update(fileArray[i]);
         }
       }
     } catch (e) {

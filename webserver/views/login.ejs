@@ -19,6 +19,28 @@
     background-size: cover;
     background-image: url("https://mdbootstrap.com/img/Photos/Others/images/76.jpg")
   }
+
+  .tooltip-wrap {
+    position: bottom;
+    padding-top: 5%;
+  }
+
+  .tooltip-wrap .tooltip-content {
+    display: none;
+    position: absolute;
+    bottom: 5%;
+    left: 5%;
+    right: 5%;
+    background-color: rgb(128, 119, 119);
+    padding: .5em;
+    min-width: 10rem;
+    border-radius: 25px;
+    
+  }
+
+  .tooltip-wrap:hover .tooltip-content {
+    display: block;
+  }
 </style>
 
 <body>
@@ -28,17 +50,31 @@
         <div class="col-12 col-md-8 col-lg-6 col-xl-5">
           <div class="card bg-dark text-white" style="border-radius: 1rem;">
             <div class="card-body p-5 text-center">
-              <div class="mb-md-5 mt-md-4 pb-5">
+              <div class="mb-md-5 mt-md-2 pb-2">
                 <h4 class="fw-bold mb-2 text-uppercase">Drive Permission Manager</h4>
                 <p class="text-white-50 mb-5">Institute for Pervasive Cybersecurity</p>
                 <form action="/auth/google" method="get">
                   <button onclick="toggleLoading()" class="btn btn-lg btn-block btn-primary"
                     style="background-color: #dd4b39;" type="submit"><i aria-hidden="true"></span>
                       <span id="loadingIndicator" class="spinner-border spinner-border-sm" role="status"
-                      hidden="true"></span>
+                        hidden="true"></span>
                       <span class="fab fa-google me-2"></i> Sign in with google</span>
                   </button>
                 </form>
+                <div class="tooltip-wrap">
+                  <img src="/sdp-logo.png" alt="sdp-logo" class="logo">
+                  <div class="tooltip-content">
+                    This website was created for a <br/>
+                    Boise State University<br/>
+                    Computer Science Senior Design Project by
+                    <div> Jackson Morton </div>
+                    <div> Phillip Bruce </div>
+                    <div> Ethan Frech </div>
+                    <div> Isaac Bard </div>
+                    For information about sponsoring a project go to <br />
+                    <a href="https://www.boisestate.edu/coen-cs/community/cs481-senior-design-project/"> https://www.boisestate.edu/coen-cs/community/cs481-senior-design-project/</a>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
