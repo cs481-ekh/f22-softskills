@@ -41,9 +41,7 @@
             let emailArray = emailQuery.split("\n");
             let roleQuery = document.getElementById("inputState").value;
             let roleArray = [];
-            let fileIds = Array.from(
-                document.querySelectorAll("input[type=checkbox]:checked")
-            );
+            let fileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
             let fileIdArray = [];
             //mild input sanitization
             emailArray = emailArray.filter(function (entry) {
@@ -88,9 +86,8 @@
                         //clears preview pane
                         document.getElementById("list").innerHTML = "";
                     } else {
-                        console.warn("no res for addPermission");
+                        console.log("no res for addPermission");
                     }
-
                 }
             );
         }
@@ -175,7 +172,7 @@
                             }
                         }
                     } else {
-                        console.warn("no res from getPermissions");
+                        console.log("no res from getPermissions");
                     }
                 });
 
@@ -281,56 +278,59 @@
          */
         async function removeEmails() {
             /**
-      * NOTES:
-      * - remove uneccesary getPermissions call
-      * - use emails, not permission ids
-      * - pass selected file ids to removeEmails from emailRemoveList?
-      */
-            async function emailRemoveList() {
-                let fileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
-                let matchedFilesPermissions = [];
-                let emailArray = [];
-                let emailRemoveList = [];
-                for (let i = 0; i < fileIds.length; i++) {
-                    fileIds[i] = fileIds[i].parentElement.parentElement.id;
-                }
-                getPermissions(fileIds).then(res => {
-                    if (res) {
-                        for (const permission of res) {
-                            if (permission.role !== 'owner') {
-                                matchedFilesPermissions.push(permission.id);
-                                emailArray.push(permission.user.emailAddress);
+             * NOTES:
+             * - remove uneccesary getPermissions call
+             *  - use emails, not permission ids
+             * - pass selected file ids to removeEmails from emailRemoveList?
+             */
+            let removeFileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
+            let removeCheckboxes = document.querySelectorAll("input[label=removeCheckBox]:checked");
+            let emailsToRemove = [];
+            let fileIds = [];
+
+            for (let i = 0; i < removeCheckboxes.length; i++) {
+                emailsToRemove.push(removeCheckboxes[i].value);
+            }
+
+            for (let i = 0; i < removeFileIds.length; i++) {
+                fileIds.push(removeFileIds[i].parentElement.parentElement.id);
+            }
+
+            requestRemovePermissions(fileIds, emailsToRemove, null).then(res => {
+                if (res) {
+                    res.forEach(file => {
+                        for (let i = 0; i < files.length; i++) {
+                            if (files[i].id == file.id) {
+                                files[i] = file;
+                                break;
                             }
                         }
-                        let uniqueEmails = [...new Set(emailArray)];
-                        let uniqueEmailArray = Array.from(uniqueEmails);
-                        for (let i = 0; i < uniqueEmailArray.length; i++) {
-                            emailRemoveList = emailRemoveList + '<div class="form-check"><input class="form-check-input" label="removeCheckBox" type="checkbox" value="' + uniqueEmailArray[i] + '" id="flexCheckDefault">  <label class="form-check-label" for="flexCheckDefault">' + uniqueEmailArray[i] + '</label> </div>';
-                        }
-                        document.getElementById('emailRemoveList').innerHTML = emailRemoveList;
-                    }
-                    else {
-                        console.log('no res from getPermissions');
-                    }
-                });
-            }
+                    })
+                    const isChecked = removeFileIds;
+                    isChecked.forEach((file) => {
+                        file.checked = false;
+                        file.parentElement.style.backgroundColor = '#7ECDFA';
+                    });
+                    document.getElementById('list').innerHTML = '';
+                }
+            });
+        }
+        /**
+         * @brief - This function simply calls emailRemoveList() using await for async functionality.
+         *          I had to do it this way because of the way I use onlick in the modal workflow.
+         */
+        async function emailRemoveListAwaiter() {
+            await emailRemoveList();
+        }
 
-            /**
-             * @brief - This function simply calls emailRemoveList() using await for async functionality.
-             *          I had to do it this way because of the way I use onlick in the modal workflow.
-             */
-            async function emailRemoveListAwaiter() {
-                await emailRemoveList();
-            }
-
-            /**
-             * @brief - This function simply calls removeEmails() using await for async functionality.
-             *          I had to do it this way because of the way I use onlick in the modal workflow.
-             *
-             */
-            async function removeEmailsAwaiter() {
-                await removeEmails();
-            }
+        /**
+         * @brief - This function simply calls removeEmails() using await for async functionality.
+         *          I had to do it this way because of the way I use onlick in the modal workflow.
+         *
+         */
+        async function removeEmailsAwaiter() {
+            await removeEmails();
+        }
     </script>
     <div class="pos-f-t">
         <div class="navbar-header">
@@ -367,7 +367,6 @@
         <h2>My Files</h2>
         <hr class="style13">
     </div>
-
     <div class="preview-pane">
         <button type="button" class="btn btn-success add" data-toggle="modal" data-target="#myModal">Add</button>
         <div class="modal fade" id="myModal" tabindex="-1" data-backdrop="static" data-keyboard="true"
@@ -431,72 +430,68 @@
     </div>
     <div class="enum-pane" id='box'>
         <script>
-                // Create an array of all the files/folders that are children of another folder
-                const children = files.reduce((children, curr) => {
-                    return [...children, ...(curr.children || [])];
-                }, []);
-                // These are the root buttons because they are not children
-                const rootParents = files.filter((file) => !children.includes(file.id));
-                const onClickHandler = (event) => {
-                    // Stop click event from propagating up the DOM tree and clicking other buttons
-                    event.stopPropagation();
-                    // Select the button's parent (button container) and all its children nodes
-                    let fileId = [];
-                    if (event.target.parentNode.id) {
-                        fileId = event.target.parentNode.id;
-                    }
-                    else if (event.target.parentNode.parentNode.parentNode.id === "box") {
-                        fileId = event.target.parentNode.parentNode.id;
-                    }
-                    else {
-                        fileId = event.target.parentNode.parentNode.parentNode.id;
-                    }
-                    getGrandchildren(fileId).then(res => res.forEach(f => files.push(f)));
-                    preview(files, fileId);
-                    const buttonContainer = document.getElementById(fileId);
-                    const containerNodes = buttonContainer.children;
-                    if (containerNodes && Array.from(containerNodes).length > 1) {
-                        // Button container has child nodes besides the button/folder itself, so "close" the folder
-                        // Iterate through each child and remove the child from the button container
-                        Array.from(containerNodes).forEach((node, index) => {
-                            // Do nothing to the first child, since this is the folder/button itself
-                            if (index === 0) return;
-                            buttonContainer.removeChild(node);
-                        });
-                    } else {
-                        // Button container does not have other children besides the button/folder itself, so "open" the folder
-                        // Find the file from the parsed JSON and append a button for each child to the button container
-                        const file = files.find((file) => file.id === fileId);
-                        (file.children || []).forEach((childId) => {
-                            const childFile = files.find((file) => file.id === childId);
-                            const childButton = createButton(childFile, ['child']);
-                            buttonContainer.appendChild(childButton);
-                        });
-                    }
+            // Create an array of all the files/folders that are children of another folder
+            const children = files.reduce((children, curr) => {
+                return [...children, ...(curr.children || [])];
+            }, []);
+            // These are the root buttons because they are not children
+            const rootParents = files.filter((file) => !children.includes(file.id));
+            const onClickHandler = (event) => {
+                // Stop click event from propagating up the DOM tree and clicking other buttons
+                event.stopPropagation();
+                // Select the button's parent (button container) and all its children nodes
+                let fileId = [];
+                if (event.target.parentNode.id) {
+                    fileId = event.target.parentNode.id;
                 }
-                // Creates a new button element and applies class names to the button container
-                const createButton = (file, classNames = []) => {
-                    const buttonContainer = document.createElement('div');
-                    buttonContainer.className = classNames.join(' ');
-                    // This id is used to find where children will be appended in onClickHandler
-                    buttonContainer.id = file.id;
-                    const button = document.createElement('div');
-                    const checkbox = document.createElement('input');
-                    const label = document.createElement('div');
-                    const container = document.createElement('div');
-                    checkbox.type = 'checkbox';
-                    checkbox.className = 'checkbox';
-                    checkbox.name = 'fileCheckBoxes';
-                    button.classList.add('button');
-                    label.innerHTML = file.name;
+                else if (event.target.parentNode.parentNode.parentNode.id === "box") {
+                    fileId = event.target.parentNode.parentNode.id;
+                }
+                else {
+                    fileId = event.target.parentNode.parentNode.parentNode.id;
+                }
+                getGrandchildren(fileId).then(res => res.forEach(f => files.push(f)));
+                preview(files, fileId);
+                const buttonContainer = document.getElementById(fileId);
+                const containerNodes = buttonContainer.children;
+                if (containerNodes && Array.from(containerNodes).length > 1) {
+                    // Button container has child nodes besides the button/folder itself, so "close" the folder
+                    // Iterate through each child and remove the child from the button container
+                    Array.from(containerNodes).forEach((node, index) => {
+                        // Do nothing to the first child, since this is the folder/button itself
+                        if (index === 0) return;
+                        buttonContainer.removeChild(node);
+                    });
+                } else {
+                    // Button container does not have other children besides the button/folder itself, so "open" the folder
+                    // Find the file from the parsed JSON and append a button for each child to the button container
+                    const file = files.find((file) => file.id === fileId);
+                    (file.children || []).forEach((childId) => {
+                        const childFile = files.find((file) => file.id === childId);
+                        const childButton = createButton(childFile, ['child']);
+                        buttonContainer.appendChild(childButton);
+                    });
+                }
+            }
+            // Creates a new button element and applies class names to the button container
+            const createButton = (file, classNames = []) => {
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = classNames.join(' ');
+                // This id is used to find where children will be appended in onClickHandler
+                buttonContainer.id = file.id;
+                const button = document.createElement('div');
+                const checkbox = document.createElement('input');
+                const label = document.createElement('div');
+                const container = document.createElement('div');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'checkbox';
+                checkbox.name = 'fileCheckBoxes';
+                button.classList.add('button');
+                label.innerHTML = file.name;
 
-                    // if a parent and has children add folder icon
-                    let folderIcon = document.createElement('icon');
-                    // if (file.children && file.children.length > 0) {
-                    //     folderIcon.className = 'material-icons';
-                    //     folderIcon.textContent = 'folder';
-                    //     container.appendChild(folderIcon);
-                    // } else {
+                
+                // if a parent and has children add folder icon
+                let folderIcon = document.createElement('icon');
                     switch (file.mimeType) {
                         case 'application/vnd.google-apps.folder':
                             folderIcon.className = 'material-icons';
@@ -584,58 +579,57 @@
                             container.appendChild(folderIcon)
                             break;
                     }
-                    // }
 
-                    container.appendChild(label);
-                    button.addEventListener('click', onClickHandler);
-                    buttonContainer.appendChild(button);
-                    button.appendChild(container);
-                    button.appendChild(checkbox);
+                container.appendChild(label);
+                button.addEventListener('click', onClickHandler);
+                buttonContainer.appendChild(button);
+                button.appendChild(container);
+                button.appendChild(checkbox);
 
-                    //if parent is checked, all appended children are pre-checked
-                    button.addEventListener('click', function (event) {
-                        if (checkbox.checked) {
-                            var children = buttonContainer.getElementsByTagName('input');
-                            for (var i = 0; i < children.length; i++) {
-                                children[i].checked = true;
-                                children[i].parentElement.style.backgroundColor = 'grey';
-                                checkBoxCounter();
-                            }
-                        }
-                    });
-
-                    //change the color of the button on checkbox toggle
-                    checkbox.addEventListener('click', function (event) {
-                        if (checkbox.checked) {
-                            button.style.backgroundColor = 'grey';
+                //if parent is checked, all appended children are pre-checked
+                button.addEventListener('click', function (event) {
+                    if (checkbox.checked) {
+                        var children = buttonContainer.getElementsByTagName('input');
+                        for (var i = 0; i < children.length; i++) {
+                            children[i].checked = true;
+                            children[i].parentElement.style.backgroundColor = 'grey';
                             checkBoxCounter();
-                        } else {
-                            button.style.backgroundColor = buttonContainer.style.backgroundColor;
                         }
-                        // if parent is checked, check all children
-                        if (checkbox.checked) {
-                            var children = buttonContainer.getElementsByClassName('checkbox');
-                            for (var i = 0; i < children.length; i++) {
-                                children[i].checked = true;
-                                children[i].parentElement.style.backgroundColor = 'grey';
-                            }
-                            checkBoxCounter()
-                            // if parent is unchecked, uncheck all children    
-                        } else {
-                            var children = buttonContainer.getElementsByClassName('checkbox');
-                            for (var i = 0; i < children.length; i++) {
-                                children[i].checked = false;
-                                children[i].parentElement.style.backgroundColor = buttonContainer.style.backgroundColor;
-                            }
-                            checkBoxCounter()
-                        }
-                    });
-                    return buttonContainer;
-                }
-                const box = document.getElementById('box');
-                rootParents.forEach((parent) => {
-                    box.appendChild(createButton(parent, ['parent']));
+                    }
                 });
+
+                //change the color of the button on checkbox toggle
+                checkbox.addEventListener('click', function (event) {
+                    if (checkbox.checked) {
+                        button.style.backgroundColor = 'grey';
+                        checkBoxCounter();
+                    } else {
+                        button.style.backgroundColor = buttonContainer.style.backgroundColor;
+                    }
+                    // if parent is checked, check all children
+                    if (checkbox.checked) {
+                        var children = buttonContainer.getElementsByClassName('checkbox');
+                        for (var i = 0; i < children.length; i++) {
+                            children[i].checked = true;
+                            children[i].parentElement.style.backgroundColor = 'grey';
+                        }
+                        checkBoxCounter()
+                        // if parent is unchecked, uncheck all children    
+                    } else {
+                        var children = buttonContainer.getElementsByClassName('checkbox');
+                        for (var i = 0; i < children.length; i++) {
+                            children[i].checked = false;
+                            children[i].parentElement.style.backgroundColor = buttonContainer.style.backgroundColor;
+                        }
+                        checkBoxCounter()
+                    }
+                });
+                return buttonContainer;
+            }
+            const box = document.getElementById('box');
+            rootParents.forEach((parent) => {
+                box.appendChild(createButton(parent, ['parent']));
+            });
         </script>
         <script src="live-update.js"></script>
 
