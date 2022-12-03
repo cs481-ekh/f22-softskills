@@ -64,8 +64,6 @@ body {
 }
 
 .enum-pane {
-    border-style: double;
-    border-color: black;
     float: left;
     margin-left: auto;
     margin-right: auto;
@@ -74,6 +72,7 @@ body {
     width: 66.66%;
     height: 100%;
     overflow-y: scroll;
+    
 }
 
 .preview-pane {
@@ -82,7 +81,7 @@ body {
     margin-right: auto;
     margin-top: auto;
     margin-bottom: auto;
-    border-style: double;
+    box-shadow: inset;
     text-align: center;
     font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
     color: black;
@@ -90,6 +89,7 @@ body {
     width: 33.33%;
     height: 100%;
     overflow-y: scroll;
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
 }
 
 .access-top {
@@ -97,12 +97,16 @@ body {
     margin-right: auto;
     margin-top: auto;
     margin-bottom: auto;
-    background-color: silver;
     text-align: left;
-    color: black;
-    border-style: double;
     font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
     font-weight: lighter;
+    width: 100%;
+}
+
+hr.style13 {
+	height: 10px;
+	border: 0;
+	box-shadow: 0 10px 10px -10px #8c8b8b inset;
 }
 
 .owner {
