@@ -19,8 +19,6 @@
         integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
         integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
         crossorigin="anonymous"></script>
@@ -32,176 +30,368 @@
 
 <body>
     <script>
-        function addPermission() {
-            let emails = document.getElementById('emailTextEntry').value;
-            let role = document.getElementById('inputState').value;
-            let fileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
+        /**
+      * @brief Given an array of emails and a role type, this function will add the permission with the selected role to all the users with the corresponding emails.
+      * In this function emails, role, and fileIds are obtained byt querying the DOM. The requestAddPermissions function is called to send the request to the server, and
+      * the files from the response and matched to the corresponding files in the global files array. The files array is then updated with the new files, which contain the updated 
+      * permissions.
+      */
+        async function addPermission() {
+            let emailQuery = document.getElementById("emailTextEntry").value;
+            let emailArray = emailQuery.split("\n");
+            let roleQuery = document.getElementById("inputState").value;
+            let roleArray = [];
+            let fileIds = Array.from(
+                document.querySelectorAll("input[type=checkbox]:checked")
+            );
             let fileIdArray = [];
-            let emailArray = emails.split('\n');
-
-            document.getElementById('emailTextEntry').value = '';
-            document.getElementById('inputState').value = 'choose...';
-
-            for (let i = 0; i < fileIds.length; i++) {
-                fileIdArray.push(fileIds[i].parentElement.parentElement.id)
+            //mild input sanitization
+            emailArray = emailArray.filter(function (entry) {
+                return entry.trim() != "";
+            });
+            for (let i = 0; i < roleQuery.length; i++) {
+                if (
+                    roleQuery[i] == "writer" ||
+                    roleQuery[i] == "reader" ||
+                    roleQuery[i] == "commenter"
+                ) {
+                    roleArray = roleQuery[i];
+                    break;
+                } else {
+                    console.warn("Invalid role");
+                }
             }
+            //dom manipulation
+            document.getElementById("emailTextEntry").value = "";
+            document.getElementById("inputState").value = "choose...";
+            for (let i = 0; i < fileIds.length; i++) {
+                fileIdArray.push(fileIds[i].parentElement.parentElement.id);
+            }
+            //post request to /addPermissions
+            await requestAddPermissions(fileIdArray, roleQuery, "user", emailArray).then(
+                (res) => {
+                    if (res) {
+                        //replaces implicated files with updated files
+                        res.forEach((file) => {
+                            for (let i = 0; i < files.length; i++) {
+                                if (files[i].id == file.id) {
+                                    files[i] = file;
+                                    break;
+                                }
+                            }
+                        });
+                        //unchecks all files in enum pane and reverts color
+                        fileIds.forEach((file) => {
+                            file.checked = false;
+                            file.parentElement.style.backgroundColor = "#7ECDFA";
+                        });
+                        //clears preview pane
+                        document.getElementById("list").innerHTML = "";
+                    } else {
+                        console.warn("no res for addPermission");
+                    }
 
-            requestAddPermissions(fileIdArray, role, "user", emailArray).then(res => {
-                if (res) {
-                    res.forEach(file => {
-                        for (let i = 0; i < files.length; i++) {
-                            if (files[i].id == file.id) {
-                                files[i] = file;
-                                break;
+                }
+            );
+        }
+
+        /**
+        * @brief - Simply counts the number of checkboxQuery in the enumeration pane when checked.
+        *          If there are no checkboxQuery checked, the preview pane is cleared. The user
+        *          can view specifics about specific files by clicking on them, not checking them.
+        *          If there are checkboxQuery checked, the preview pane is populated with a counter
+        *          displaying the number of checked files. This does not include children or grandchildren.
+        */
+        function checkBoxCounter() {
+            let checkboxQuery = document.querySelectorAll(
+                "input[name=fileCheckBoxes]:checked"
+            );
+            let numSelected = checkboxQuery.length;
+            if (numSelected > 0) {
+
+                document.getElementById("list").innerHTML = "";
+                document.getElementById("list").innerHTML =
+                    '<div class = "selected-preview">' +
+                    '<h1 class = "file-counter">' +
+                    '<p id ="countText">' +
+                    numSelected +
+                    " file(s) selected." +
+                    "</p>" +
+                    "</h1>" +
+                    "</div>";
+            } else {
+                document.getElementById("list").innerHTML = "";
+            }
+        }
+
+        /**
+         * @brief - This function is called when the user clicks on a file in the enumeration pane. It displays the file's owner with name, email, and role. It also displays a list of access holders
+         *          with their name, email, and role. Functonality for displaying the role expiration date is supported but not used. Displays all accessholders at all levels of the file hierarchy under the
+         *          selected parent folder(s).
+         *
+         * @param {string} fileId - The id of the file to be displayed.
+         * @param {File[]} files - The global array of files loaded in the front end.
+         *
+         */
+        async function preview(files, fileId) {
+            if (
+                document.querySelectorAll("input[name=fileCheckBoxes]:checked").length < 1
+            ) {
+                const previewFile = _.find(files, { id: fileId });
+                const fileIdArray = [fileId];
+                let ownerDropDown =
+                    "<p>" +
+                    '<h2 id="singleSelectId" name ="' +
+                    _.get(previewFile, "id") +
+                    '">' +
+                    _.get(previewFile, "name") +
+                    "</h2>" +
+                    "</p>";
+                let filePermissions = [];
+                let uniqueFilePermissions = [];
+                let accessList = [];
+                //owner information drop down
+                ownerDropDown =
+                    ownerDropDown +
+                    "<h3>Owner</h3>" +
+                    '<div name="info" class = "dropdown"><button class="btn btn-info btn-block dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' +
+                    _.get(previewFile, "owners[0].displayName") +
+                    '<span class="caret"></span></button>' +
+                    '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">' +
+                    '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' +
+                    "<b>EMAIL: </b>" +
+                    " " +
+                    _.get(previewFile, "owners[0].emailAddress") +
+                    "</a></li>" +
+                    "</ul>" +
+                    "</div>";
+                //access holder information drop down
+                //filePermissions = _.get(previewFile, "permissions");
+                await getPermissions(fileIdArray).then((res) => {
+                    if (res) {
+                        for (const permission of res) {
+                            if (permission.role !== "owner") {
+                                filePermissions.push(permission);
                             }
                         }
-                    });
-                    fileIds.forEach((file) => {
-                        file.checked = false;
-                        file.parentElement.style.backgroundColor = '#7ECDFA';
-                    });
-                    document.getElementById('list').innerHTML = '';
+                    } else {
+                        console.warn("no res from getPermissions");
+                    }
+                });
+
+                for (let i = 0; i < filePermissions.length; i++) {
+                    let unique = true;
+                    for (let j = 0; j < uniqueFilePermissions.length; j++) {
+                        if (filePermissions[i].user.emailAddress == uniqueFilePermissions[j].user.emailAddress) {
+                            unique = false;
+                            break;
+                        }
+                    }
+                    if (unique) {
+                        uniqueFilePermissions.push(filePermissions[i]);
+                    }
                 }
-            });
-        }
 
-        function checkBoxCounter() {
-            let checkboxes = document.querySelectorAll("input[name=fileCheckBoxes]:checked");
-            let numSelected = checkboxes.length;
-            if (numSelected > 0) {
-                document.getElementById('list').innerHTML = '';
-                document.getElementById('list').innerHTML = '<div class = "selected-preview">' + '<h1 class = "file-counter">' + '<p id ="countText">' + numSelected + ' file(s) selected.' + '</p>' + '</h1>' + '</div>'
-            }
-            else {
-                document.getElementById('list').innerHTML = '';
-            }
-        }
+                //get array of permissions with unique email addresses
 
-        function getCheckBoxCounter() {
-            let checkboxCount = document.getElementById('countText').innerHTML;
-            document.getElementById('areSure').innerHTML = ' ' + '<h1>' + checkboxCount + '</h1>' + '<h1>Are you sure?</h1>';
-        }
-
-        function preview(files, fileId) {
-            if (document.querySelectorAll("input[name=fileCheckBoxes]:checked").length <= 0) {
-                const previewFile = _.find(files, { 'id': fileId });
-                let titleOwner = '<p>' + '<h2 id="singleSelectId" name ="' + _.get(previewFile, 'id') + '">' + _.get(previewFile, 'name') + '</h2>' + '</p>';
-                titleOwner = titleOwner + '<h3>Owner</h3>' + '<div name="info" class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' + _.get(previewFile, 'owners[0].displayName') + '<span class="caret"></span></button>'
-                titleOwner = titleOwner + '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">'
-                titleOwner = titleOwner + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(previewFile, 'owners[0].emailAddress') + '</a></li>'
-                titleOwner = titleOwner + '</ul>' + '</div>';
-                let filePermissions = [];
-                let accessList = [];
-                filePermissions = _.get(previewFile, 'permissions');
-                if (typeof (filePermissions) !== "undefined") {
-                    for (let index = 0; index < filePermissions.length; index++) {
-                        if (_.get(filePermissions[index], 'user.displayName') !== "drive-permission-manager@driver-permission-manager.iam.gserviceaccount.com" && _.get(previewFile, 'owners[0].displayName') !== _.get(filePermissions[index], 'user.displayName')) {
-                            let accessHolder = '<div name="info" class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' + _.get(filePermissions[index], 'user.displayName') + '<span class="caret"></span></button>'
-                            accessHolder = accessHolder + '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">'
-                            accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(filePermissions[index], 'user.emailAddress') + '</a></li>'
-                            accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>ROLE: </b>' + _.get(filePermissions[index], 'role') + '</a></li>'
-                            accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EXPIRES: </b>' + _.get(filePermissions[index], 'expirationDate') + '</a></li>'
-                            accessHolder = accessHolder + '</ul>' + '</div>'
-                            accessList = accessList + accessHolder;
+                if (typeof uniqueFilePermissions !== "undefined") {
+                    for (let index = 0; index < uniqueFilePermissions.length; index++) {
+                        if (
+                            _.get(uniqueFilePermissions[index], "user.displayName") !==
+                            "drive-permission-manager@driver-permission-manager.iam.gserviceaccount.com" &&
+                            _.get(previewFile, "owners[0].displayName") !==
+                            _.get(uniqueFilePermissions[index], "user.displayName")
+                        ) {
+                            let accessHolderDropDown =
+                                '<div name="info" class = "dropdown"><button class="btn btn-default btn-block dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' +
+                                _.get(uniqueFilePermissions[index], "user.displayName") +
+                                '<span class="caret"></span></button>' +
+                                '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">' +
+                                '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' +
+                                "<b>EMAIL: </b>" +
+                                " " +
+                                _.get(uniqueFilePermissions[index], "user.emailAddress") +
+                                "</a></li>" +
+                                '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' +
+                                "<b>ROLE: </b>" +
+                                _.get(uniqueFilePermissions[index], "role") +
+                                "</a></li>" +
+                                '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' +
+                                "<b>EXPIRES: </b>" +
+                                _.get(uniqueFilePermissions[index], "expirationDate") +
+                                "</a></li>" +
+                                "</ul>" +
+                                "</div>";
+                            accessList = accessList + accessHolderDropDown;
                         }
                     }
                 }
-                document.getElementById('list').innerHTML = '';
-                document.getElementById('list').innerHTML = '<div>' + document.getElementById('list').innerHTML + ' ' + titleOwner + '<h2>Who has access</h2>' + accessList + '<br>' + ' ' + '</br>' + '</div>';
+                //dom manipulation
+                document.getElementById("list").innerHTML = "";
+                document.getElementById("list").innerHTML =
+                    "<div>" +
+                    document.getElementById("list").innerHTML +
+                    " " +
+                    ownerDropDown +
+                    "<h2>Who has access</h2>" +
+                    accessList +
+                    "<br>" +
+                    " " +
+                    "</br>" +
+                    "</div>";
             }
         }
 
-        async function emailRemoveListAwaiter() {
-            await emailRemoveList();
-        }
-
-        async function removeEmailsAwaiter() {
-            await removeEmails();
-        }
-
-        //await wherever I call this or .then
+        /**
+             * @brief - This function is called when the user opens the remove modal. It gets a list of emails based on the selected files
+             *          and display them in the modal. The user can then select which emails to remove.
+             */
         async function emailRemoveList() {
-            let fileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
+            let fileIds = Array.from(
+                document.querySelectorAll("input[name=fileCheckBoxes]:checked")
+            );
             let matchedFilesPermissions = [];
             let emailArray = [];
-            let emailRemoveList = [];
-
+            let emailRemovalList = [];
+            //file ids are contained in the id of the parent element of the parent element of the checkbox
             for (let i = 0; i < fileIds.length; i++) {
                 fileIds[i] = fileIds[i].parentElement.parentElement.id;
             }
-
-            getPermissions(fileIds).then(res => {
+            getPermissions(fileIds).then((res) => {
                 if (res) {
                     for (const permission of res) {
-                        if (permission.role !== 'owner') {
+                        if (permission.role !== "owner") {
                             matchedFilesPermissions.push(permission.id);
                             emailArray.push(permission.user.emailAddress);
                         }
                     }
-                    let uniqueEmails = [...new Set(emailArray)];
-                    let uniqueEmailArray = Array.from(uniqueEmails);
-                    for (let i = 0; i < uniqueEmailArray.length; i++) {
-                        emailRemoveList = emailRemoveList + '<div class="form-check"><input class="form-check-input" label="removeCheckBox" type="checkbox" value="' + uniqueEmailArray[i] + '" id="flexCheckDefault">  <label class="form-check-label" for="flexCheckDefault">' + uniqueEmailArray[i] + '</label> </div>';
+                    //remove duplicates if any
+                    emailArray = Array.from(new Set(emailArray));
+                    //dom manipulation
+                    for (let i = 0; i < emailArray.length; i++) {
+                        emailRemovalList =
+                            emailRemovalList +
+                            '<div class="form-check"><input class="form-check-input" label="removeCheckBox" type="checkbox" value="' +
+                            emailArray[i] +
+                            '" id="flexCheckDefault">  <label class="form-check-label" for="flexCheckDefault">' +
+                            emailArray[i] +
+                            "</label> </div>";
                     }
-                    document.getElementById('emailRemoveList').innerHTML = emailRemoveList;
-                }
-                else {
-                    console.log('no res from getPermissions');
+                    document.getElementById("emailRemovalList").innerHTML = emailRemovalList;
+                } else {
+                    console.warn("no res from getPermissions");
                 }
             });
         }
 
+        /**
+      * @brief - This function is called when the user clicks the confrim button in the remove modal. The emails the user selected in the modal
+      *          are used to remove the permissions from the selected files. The owner is excluded because you can't remove the owner permission.  All permissions
+      *          with matching emails are removed from the files selected in the enumeration pane, and all of their children and grandchildren.
+      */
         async function removeEmails() {
             /**
-             * NOTES:
-             * - remove uneccesary getPermissions call
-             *  - use emails, not permission ids
-             * - pass selected file ids to removeEmails from emailRemoveList?
-             */
-            let removeFileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
-            let removeCheckboxes = document.querySelectorAll("input[label=removeCheckBox]:checked");
-            let emailsToRemove = [];
-            let fileIds = [];
+      * NOTES:
+      * - remove uneccesary getPermissions call
+      * - use emails, not permission ids
+      * - pass selected file ids to removeEmails from emailRemoveList?
+      */
+            let enumPaneSelection = Array.from(
+                document.querySelectorAll("input[name=fileCheckBoxes]:checked")
+            );
+            let remModalSelection = document.querySelectorAll(
+                "input[label=removeCheckBox]:checked"
+            );
+            let emailArray = [];
+            let fileIdArray = [];
 
-            for (let i = 0; i < removeCheckboxes.length; i++) {
-                emailsToRemove.push(removeCheckboxes[i].value);
+            for (let i = 0; i < remModalSelection.length; i++) {
+                emailArray.push(remModalSelection[i].value);
             }
 
-            for (let i = 0; i < removeFileIds.length; i++) {
-                fileIds.push(removeFileIds[i].parentElement.parentElement.id);
+            for (let i = 0; i < enumPaneSelection.length; i++) {
+                fileIdArray.push(enumPaneSelection[i].parentElement.parentElement.id);
             }
 
-            requestRemovePermissions(fileIds, emailsToRemove, null).then(res => {
+
+
+            requestRemovePermissions(fileIdArray, emailArray, null).then((res) => {
                 if (res) {
-                    res.forEach(file => {
+                    res.forEach((file) => {
                         for (let i = 0; i < files.length; i++) {
                             if (files[i].id == file.id) {
                                 files[i] = file;
                                 break;
                             }
                         }
-                    })
-                    const isChecked = removeFileIds;
+                    });
+                    const isChecked = enumPaneSelection;
                     isChecked.forEach((file) => {
                         file.checked = false;
-                        file.parentElement.style.backgroundColor = '#7ECDFA';
+                        file.parentElement.style.backgroundColor = "#7ECDFA";
                     });
-                    document.getElementById('list').innerHTML = '';
+                    document.getElementById("list").innerHTML = "";
+                } else {
+                    console.warn("no res for requestRemovePermissions");
                 }
             });
         }
-    </script>
 
-    <div class="jumbotron text-center">
-        <Header>
-            <h1>Welcome to Drive Permission Manager</h1>
-        </Header>
-    </div>
-    <div class="preview-pane">
-        <div class="access-top">
-            <h1>Preview</h1>
+        /**
+         * @brief - This function simply calls emailRemoveList() using await for async functionality.
+         *          I had to do it this way because of the way I use onlick in the modal workflow.
+         */
+        async function emailRemoveListAwaiter() {
+            await emailRemoveList();
+        }
+
+        /**
+         * @brief - This function simply calls removeEmails() using await for async functionality.
+         *          I had to do it this way because of the way I use onlick in the modal workflow.
+         *
+         */
+        async function removeEmailsAwaiter() {
+            await removeEmails();
+        }
+    </script>
+    <div class="pos-f-t">
+        <div class="navbar-header">
+            <div class="collapse" id="navbarToggleExternalContent">
+                <div class="bg-dark p-4">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item active">
+                            <a class="nav-link" href="https://www.boisestate.edu/cybersecurity/">Institute for Pervasive
+                                Cybersecurity</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link"
+                                href="https://www.boisestate.edu/coen-cs/currentstudents/senior-design-projects/#team-1">Other
+                                Senior Design Projects</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
-        <button type="button" class="btn btn-primary add" data-toggle="modal" data-target="#myModal">Add</button>
+    </div>
+    <nav class="navbar navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">Drive Permission Manager</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggleExternalContent"
+            aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </nav>
+    </div>
+    <div>
+        <br>
+        </br>
+    </div>
+    <div class="access-top">
+        <h2>My Files</h2>
+        <hr class="style13">
+    </div>
+
+    <div class="preview-pane">
+        <button type="button" class="btn btn-success add" data-toggle="modal" data-target="#myModal">Add</button>
         <div class="modal fade" id="myModal" tabindex="-1" data-backdrop="static" data-keyboard="true"
             aria-labelledby="myModalLabel" aria-hidden="true">
             <div class="modal-dialog  modal-dialog-centered">
@@ -236,7 +426,7 @@
                 </div>
             </div>
         </div>
-        <button type="button" onclick="emailRemoveListAwaiter()" class="btn btn-primary remove" data-toggle="modal"
+        <button type="button" onclick="emailRemoveListAwaiter()" class="btn btn-danger remove" data-toggle="modal"
             data-target="#myModal2">Remove</button>
         <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" data-backdrop="true" data-keyboard="true"
             aria-labelledby="myModalLabel" aria-hidden="true">
@@ -246,7 +436,7 @@
                         <h4 class="modal-title" id="myModalLabel">Remove Permission(s)</h4>
                         <button type="button" class="close" data-dismiss="modal">&times;</button>
                     </div>
-                    <div class="removeList" id="emailRemoveList"></div>
+                    <div class="removeList" id="emailRemovalList"></div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                         <button type="button" class="btn btn-primary" onclick="removeEmailsAwaiter()"
@@ -258,259 +448,217 @@
         <p id='list'>
         </p>
         <script type="text/JavaScript">
-            const files = JSON.parse(`<%- JSON.stringify(array)%>`);
-            </script>
-    </div>
-    <div class="enum-pane" id='box'>
-        <div class="access-top">
-            <h1>Drive Contents</h1>
-        </div>
-
-        <script>
-            // Create an array of all the files/folders that are children of another folder
-            const children = files.reduce((children, curr) => {
-                return [...children, ...(curr.children || [])];
-            }, []);
-            // These are the root buttons because they are not children
-            const rootParents = files.filter((file) => !children.includes(file.id));
-            const onClickHandler = (event) => {
-                // Stop click event from propagating up the DOM tree and clicking other buttons
-                event.stopPropagation();
-                // Select the button's parent (button container) and all its children nodes
-                const fileId = event.target.parentNode.id;
-                getGrandchildren(fileId).then(res => res.forEach(f => files.push(f)));
-                preview(files, fileId);
-                const buttonContainer = document.getElementById(fileId);
-                const containerNodes = buttonContainer.children;
-                if (containerNodes && Array.from(containerNodes).length > 1) {
-                    // Button container has child nodes besides the button/folder itself, so "close" the folder
-                    // Iterate through each child and remove the child from the button container
-                    Array.from(containerNodes).forEach((node, index) => {
-                        // Do nothing to the first child, since this is the folder/button itself
-                        if (index === 0) return;
-                        buttonContainer.removeChild(node);
-                    });
-                } else {
-                    // Button container does not have other children besides the button/folder itself, so "open" the folder
-                    // Find the file from the parsed JSON and append a button for each child to the button container
-                    const file = files.find((file) => file.id === fileId);
-                    (file.children || []).forEach((childId) => {
-                        const childFile = files.find((file) => file.id === childId);
-                        const childButton = createButton(childFile, ['child']);
-                        buttonContainer.appendChild(childButton);
-                    });
-                }
-            }
-            // Creates a new button element and applies class names to the button container
-            const createButton = (file, classNames = []) => {
-                const buttonContainer = document.createElement('div');
-                buttonContainer.className = classNames.join(' ');
-                // This id is used to find where children will be appended in onClickHandler
-                buttonContainer.id = file.id;
-                const button = document.createElement('div');
-                const checkbox = document.createElement('input');
-                const label = document.createElement('div');
-                const container = document.createElement('div');
-                checkbox.type = 'checkbox';
-                checkbox.className = 'checkbox';
-                checkbox.name = 'fileCheckBoxes';
-                button.classList.add('button');
-                label.innerHTML = file.name;
-
-
-                // if a parent and has children add folder icon
-                let folderIcon = document.createElement('icon');
-                // if (file.children && file.children.length > 0) {
-                //     folderIcon.className = 'material-icons';
-                //     folderIcon.textContent = 'folder';
-                //     container.appendChild(folderIcon);
-                // } else {
-                    switch (file.mimeType) {
-                        case 'application/vnd.google-apps.folder':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'folder';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.file':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'insert_drive_file';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.document':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'description';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.spreadsheet':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'table_chart';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.presentation':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'slideshow';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.drawing':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'insert_photo';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.form':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'assignment';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.map':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'map';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.photo':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'photo';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.script':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'code';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.site':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'web';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.video':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'video_library';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.audio':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'audiotrack';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.unknown':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'help';
-                            container.appendChild(folderIcon) / get
-                            break;
-                        case 'application/vnd.google-apps.drive-sdk':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'help';
-                            container.appendChild(folderIcon)
-                            break;
-                        case 'application/vnd.google-apps.jam':
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'help';
-                            container.appendChild(folderIcon)
-                            break;
-                        default:
-                            folderIcon.className = 'material-icons';
-                            folderIcon.textContent = 'insert_drive_file';
-                            container.appendChild(folderIcon)
-                            break;
-                    }
-                // }
-
-                container.appendChild(label);
-                button.addEventListener('click', onClickHandler);
-                buttonContainer.appendChild(button);
-                button.appendChild(container);
-                button.appendChild(checkbox);
-
-                //if parent is checked, all appended children are pre-checked
-                button.addEventListener('click', function (event) {
-                    if (checkbox.checked) {
-                        var children = buttonContainer.getElementsByTagName('input');
-                        for (var i = 0; i < children.length; i++) {
-                            children[i].checked = true;
-                            children[i].parentElement.style.backgroundColor = 'grey';
-                            checkBoxCounter();
-                        }
-                    }
-                });
-
-                //change the color of the button on checkbox toggle
-                checkbox.addEventListener('click', function (event) {
-                    if (checkbox.checked) {
-                        button.style.backgroundColor = 'grey';
-                        checkBoxCounter();
-                    } else {
-                        button.style.backgroundColor = buttonContainer.style.backgroundColor;
-                    }
-                    // if parent is checked, check all children
-                    if (checkbox.checked) {
-                        var children = buttonContainer.getElementsByClassName('checkbox');
-                        for (var i = 0; i < children.length; i++) {
-                            children[i].checked = true;
-                            children[i].parentElement.style.backgroundColor = 'grey';
-                        }
-                        checkBoxCounter()
-                        // if parent is unchecked, uncheck all children    
-                    } else {
-                        var children = buttonContainer.getElementsByClassName('checkbox');
-                        for (var i = 0; i < children.length; i++) {
-                            children[i].checked = false;
-                            children[i].parentElement.style.backgroundColor = buttonContainer.style.backgroundColor;
-                        }
-                        checkBoxCounter()
-                    }
-                });
-                return buttonContainer;
-            }
-
-            const box = document.getElementById('box');
-            // const setPermission = async (fileIds) => {
-            //     const url = `/deletePermissions`;
-            //     const response = await fetch(url, {
-            //         method: 'POST',
-            //         headers: {
-            //             'Content-Type': 'application/json',
-            //         },
-            //         body: JSON.stringify({
-            //             fileIds: fileIds
-            //         })
-            //     });
-            //     if (response.status !== 200) {
-            //         throw new Error('Error setting permission');
-            //     }
-            // }
-
-            // function removePermission() {
-            //     const fileIds = [];
-            //     const checkBoxes = document.getElementsByClassName('checkbox');
-            //     const isChecked = Array.from(checkBoxes).filter((checkbox) => checkbox.checked);
-            //     isChecked.forEach((file) => {
-            //         fileIds.push(file.parentElement.parentElement.id);
-            //     });
-            //     requestRemovePermissions(fileIds).then(res => {
-            //         if (res) {
-            //             res.forEach(file => {
-            //                 for (let i = 0; i < files.length; i++) {
-            //                     if (files[i].id == file.id) {
-            //                         files[i] = file;
-            //                         break;
-            //                     }
-            //                 }
-            //             })
-            //             isChecked.forEach((file) => {
-            //                 file.checked = false;
-            //                 file.parentElement.style.backgroundColor = '#7ECDFA';
-            //             });
-            //             document.getElementById('list').innerHTML = '';
-            //         } else {
-            //             console.log("no res for removePermission");
-            //         }
-            //     });
-            // }
-            // Add the root parent folders to the root container to start
-            rootParents.forEach((parent) => {
-                box.appendChild(createButton(parent, ['parent']));
-            });
+        const files = JSON.parse(`<%- JSON.stringify(array)%>`);
         </script>
-        <script src="live-update.js"></script>
+    </div>
+    <div class="enum-pane" id='box'></div>
+    <script>
+        // Create an array of all the files/folders that are children of another folder
+        const children = files.reduce((children, curr) => {
+            return [...children, ...(curr.children || [])];
+        }, []);
+        // These are the root buttons because they are not children
+        const rootParents = files.filter((file) => !children.includes(file.id));
+        const onClickHandler = (event) => {
+            // Stop click event from propagating up the DOM tree and clicking other buttons
+            event.stopPropagation();
+            // Select the button's parent (button container) and all its children nodes
+            let fileId = [];
+            if (event.target.parentNode.id) {
+                fileId = event.target.parentNode.id;
+                console.log("event.target.parentNode is not null: " + fileId);
+
+            }
+            else if (event.target.parentNode.parentNode.parentNode.id === "box") {
+                fileId = event.target.parentNode.parentNode.id;
+                console.log("event.target is not null: " + fileId);
+            }
+            else {
+                fileId = event.target.parentNode.parentNode.parentNode.id;
+                console.log("event.target.parentNode is null: " + fileId);
+
+            }
+            getGrandchildren(fileId).then(res => res.forEach(f => files.push(f)));
+            preview(files, fileId);
+            const buttonContainer = document.getElementById(fileId);
+            const containerNodes = buttonContainer.children;
+            if (containerNodes && Array.from(containerNodes).length > 1) {
+                // Button container has child nodes besides the button/folder itself, so "close" the folder
+                // Iterate through each child and remove the child from the button container
+                Array.from(containerNodes).forEach((node, index) => {
+                    // Do nothing to the first child, since this is the folder/button itself
+                    if (index === 0) return;
+                    buttonContainer.removeChild(node);
+                });
+            } else {
+                // Button container does not have other children besides the button/folder itself, so "open" the folder
+                // Find the file from the parsed JSON and append a button for each child to the button container
+                const file = files.find((file) => file.id === fileId);
+                (file.children || []).forEach((childId) => {
+                    const childFile = files.find((file) => file.id === childId);
+                    const childButton = createButton(childFile, ['child']);
+                    buttonContainer.appendChild(childButton);
+                });
+            }
+        }
+        // Creates a new button element and applies class names to the button container
+        const createButton = (file, classNames = []) => {
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = classNames.join(' ');
+            // This id is used to find where children will be appended in onClickHandler
+            buttonContainer.id = file.id;
+            const button = document.createElement('div');
+            const checkbox = document.createElement('input');
+            const label = document.createElement('div');
+            const container = document.createElement('div');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'checkbox';
+            checkbox.name = 'fileCheckBoxes';
+            button.classList.add('button');
+            label.innerHTML = file.name;
+            // if a parent and has children add folder icon
+            let folderIcon = document.createElement('icon');
+            switch (file.mimeType) {
+                case 'application/vnd.google-apps.folder':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'folder';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.file':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'insert_drive_file';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.document':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'description';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.spreadsheet':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'table_chart';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.presentation':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'slideshow';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.drawing':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'insert_photo';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.form':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'assignment';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.map':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'map';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.photo':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'photo';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.script':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'code';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.site':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'web';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.video':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'video_library';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.audio':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'audiotrack';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.unknown':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'help';
+                    container.appendChild(folderIcon) / get
+                    break;
+                case 'application/vnd.google-apps.drive-sdk':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'help';
+                    container.appendChild(folderIcon)
+                    break;
+                case 'application/vnd.google-apps.jam':
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'help';
+                    container.appendChild(folderIcon)
+                    break;
+                default:
+                    folderIcon.className = 'material-icons';
+                    folderIcon.textContent = 'insert_drive_file';
+                    container.appendChild(folderIcon)
+                    break;
+            }
+            // }
+
+            container.appendChild(label);
+            button.addEventListener('click', onClickHandler);
+            buttonContainer.appendChild(button);
+            button.appendChild(container);
+            button.appendChild(checkbox);
+
+            //if parent is checked, all appended children are pre-checked
+            button.addEventListener('click', function (event) {
+                if (checkbox.checked) {
+                    var children = buttonContainer.getElementsByTagName('input');
+                    for (var i = 0; i < children.length; i++) {
+                        children[i].checked = true;
+                        children[i].parentElement.style.backgroundColor = 'grey';
+                        checkBoxCounter();
+                    }
+                }
+            });
+
+            //change the color of the button on checkbox toggle
+            checkbox.addEventListener('click', function (event) {
+                if (checkbox.checked) {
+                    button.style.backgroundColor = 'grey';
+                    checkBoxCounter();
+                } else {
+                    button.style.backgroundColor = buttonContainer.style.backgroundColor;
+                }
+                // if parent is checked, check all children
+                if (checkbox.checked) {
+                    var children = buttonContainer.getElementsByClassName('checkbox');
+                    for (var i = 0; i < children.length; i++) {
+                        children[i].checked = true;
+                        children[i].parentElement.style.backgroundColor = 'grey';
+                    }
+                    checkBoxCounter()
+                    // if parent is unchecked, uncheck all children    
+                } else {
+                    var children = buttonContainer.getElementsByClassName('checkbox');
+                    for (var i = 0; i < children.length; i++) {
+                        children[i].checked = false;
+                        children[i].parentElement.style.backgroundColor = buttonContainer.style.backgroundColor;
+                    }
+                    checkBoxCounter()
+                }
+            });
+            return buttonContainer;
+        }
+        const box = document.getElementById('box');
+        rootParents.forEach((parent) => {
+            box.appendChild(createButton(parent, ['parent']));
+        });
+    </script>
+    <script src="live-update.js"></script>
 
     </div>
 </body>
