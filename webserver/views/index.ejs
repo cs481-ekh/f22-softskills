@@ -480,7 +480,7 @@
                     console.log("event.target.parentNode is not null: " + fileId);
 
                 }
-                else if (event.target.classList.contains("checkbox")) {
+                else if (event.target.parentNode.parentNode.parentNode.id === "box") {
                     fileId = event.target.parentNode.parentNode.id;
                     console.log("event.target is not null: " + fileId);
                 }
