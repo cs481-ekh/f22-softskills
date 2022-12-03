@@ -168,9 +168,7 @@ app.get("/getPermissions", checkForInit, async (req, res) => {
   if (req.user && req.user.accessToken) {
     try {
       setOauth2ClientCredentials(req.user.accessToken, req.user.refreshToken);
-      // console.log("req.query.fileId: " + JSON.stringify(req));
       const fileIds = req.query.fileIds;
-      console.log(fileIds);
       let retVal = [];
       const client = new DrivePermissionManager(oauth2Client);
       for (const fileId of fileIds) {

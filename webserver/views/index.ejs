@@ -48,7 +48,6 @@
 
             requestAddPermissions(fileIdArray, role, "user", emailArray).then(res => {
                 if (res) {
-                    console.log("requestAddPermission res: ", res);
                     res.forEach(file => {
                         for (let i = 0; i < files.length; i++) {
                             if (files[i].id == file.id) {
@@ -62,8 +61,6 @@
                         file.parentElement.style.backgroundColor = '#7ECDFA';
                     });
                     document.getElementById('list').innerHTML = '';
-                } else {
-                    console.log("no res for addPermission");
                 }
             });
         }
@@ -174,11 +171,8 @@
                 fileIds.push(removeFileIds[i].parentElement.parentElement.id);
             }
 
-            console.log("emails: ", emailsToRemove);
-
             requestRemovePermissions(fileIds, emailsToRemove, null).then(res => {
                 if (res) {
-                    console.log(JSON.stringify(res));
                     res.forEach(file => {
                         for (let i = 0; i < files.length; i++) {
                             if (files[i].id == file.id) {
@@ -193,8 +187,6 @@
                         file.parentElement.style.backgroundColor = '#7ECDFA';
                     });
                     document.getElementById('list').innerHTML = '';
-                } else {
-                    console.log("no res for requestRemovePermissions");
                 }
             });
         }
