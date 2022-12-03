@@ -19,8 +19,6 @@
         integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
         crossorigin="anonymous"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
         integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
         crossorigin="anonymous"></script>
@@ -108,9 +106,6 @@
             let checkboxQuery = document.querySelectorAll(
                 "input[name=fileCheckBoxes]:checked"
             );
-            for (let i = 0; i < fileIds.length; i++) {
-                fileIdArray.push(fileIds[i].parentElement.parentElement.id);
-            }
             let numSelected = checkboxQuery.length;
             if (numSelected > 0) {
 
@@ -130,7 +125,6 @@
         }
 
         /**
-         *
          * @brief - This function is called when the user clicks on a file in the enumeration pane. It displays the file's owner with name, email, and role. It also displays a list of access holders
          *          with their name, email, and role. Functonality for displaying the role expiration date is supported but not used.
          *
@@ -219,10 +213,9 @@
         }
 
         /**
-         * @brief = This function is called when the user opens the remove modal. It gets a list of emails based on the selected files
+         * @brief - This function is called when the user opens the remove modal. It gets a list of emails based on the selected files
          *          and display them in the modal. The user can then select which emails to remove.
          */
-
         async function emailRemoveList() {
             let fileIds = Array.from(
                 document.querySelectorAll("input[name=fileCheckBoxes]:checked")
@@ -266,48 +259,65 @@
          *          are used to remove the permissions from the selected files. The owner is excluded because you can't remove the owner permission.  All permissions
          *          with matching emails are removed from the files selected in the enumeration pane, and all of their children and grandchildren.
          */
-
         async function removeEmails() {
             /**
-             * NOTES:
-             * - remove uneccesary getPermissions call
-             *  - use emails, not permission ids
-             * - pass selected file ids to removeEmails from emailRemoveList?
-             */
-            let removeFileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
-            let removeCheckboxes = document.querySelectorAll("input[label=removeCheckBox]:checked");
-            let emailsToRemove = [];
-            let fileIds = [];
+      * NOTES:
+      * - remove uneccesary getPermissions call
+      * - use emails, not permission ids
+      * - pass selected file ids to removeEmails from emailRemoveList?
+      */
+            let enumPaneSelection = Array.from(
+                document.querySelectorAll("input[name=fileCheckBoxes]:checked")
+            );
+            let remModalSelection = document.querySelectorAll(
+                "input[label=removeCheckBox]:checked"
+            );
+            let emailArray = [];
+            let fileIdArray = [];
 
-            for (let i = 0; i < removeCheckboxes.length; i++) {
-                emailsToRemove.push(removeCheckboxes[i].value);
+            for (let i = 0; i < remModalSelection.length; i++) {
+                emailArray.push(remModalSelection[i].value);
             }
 
-            for (let i = 0; i < removeFileIds.length; i++) {
-                fileIds.push(removeFileIds[i].parentElement.parentElement.id);
+            for (let i = 0; i < enumPaneSelection.length; i++) {
+                fileIdArray.push(enumPaneSelection[i].parentElement.parentElement.id);
             }
 
-            console.log("emails: ", emailsToRemove);
+            console.log("emails: ", emailArray);
 
-            requestRemovePermissions(fileIds, emailsToRemove, null).then(res => {
+            await getPermissions(fileIdArray).then((res) => {
+                if (res) {
+                    for (const permission of res) {
+                        if (permission.role !== "owner") {
+                            emailArray.push(permission.user.emailAddress);
+                        }
+                    }
+                    //remove duplicates if any
+                    emailArray = Array.from(new Set(emailArray));
+                } else {
+                    console.warn("no res from getPermissions");
+                }
+            });
+
+            await requestRemovePermissions(fileIdArray, emailArray, null).then((res) => {
                 if (res) {
                     console.log(JSON.stringify(res));
-                    res.forEach(file => {
+                    res.forEach((file) => {
                         for (let i = 0; i < files.length; i++) {
                             if (files[i].id == file.id) {
                                 files[i] = file;
                                 break;
                             }
                         }
-                    })
-                    const isChecked = removeFileIds;
+                    });
+                    const isChecked = enumPaneSelection;
                     isChecked.forEach((file) => {
                         file.checked = false;
-                        file.parentElement.style.backgroundColor = '#7ECDFA';
+                        file.parentElement.style.backgroundColor = "#7ECDFA";
                     });
-                    document.getElementById('list').innerHTML = '';
+                    document.getElementById("list").innerHTML = "";
                 } else {
-                    console.log("no res for requestRemovePermissions");
+                    console.warn("no res for requestRemovePermissions");
                 }
             });
         }
