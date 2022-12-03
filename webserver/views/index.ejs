@@ -126,7 +126,8 @@
 
         /**
          * @brief - This function is called when the user clicks on a file in the enumeration pane. It displays the file's owner with name, email, and role. It also displays a list of access holders
-         *          with their name, email, and role. Functonality for displaying the role expiration date is supported but not used.
+         *          with their name, email, and role. Functonality for displaying the role expiration date is supported but not used. Displays all accessholders at all levels of the file hierarchy under the
+         *          selected parent folder(s).
          *
          * @param {string} fileId - The id of the file to be displayed.
          * @param {File[]} files - The global array of files loaded in the front end.
@@ -153,7 +154,7 @@
                 ownerDropDown =
                     ownerDropDown +
                     "<h3>Owner</h3>" +
-                    '<div name="info" class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' +
+                    '<div name="info" class = "dropdown"><button class="btn btn-info btn-block dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' +
                     _.get(previewFile, "owners[0].displayName") +
                     '<span class="caret"></span></button>' +
                     '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">' +
@@ -202,7 +203,7 @@
                             _.get(uniqueFilePermissions[index], "user.displayName")
                         ) {
                             let accessHolderDropDown =
-                                '<div name="info" class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' +
+                                '<div name="info" class = "dropdown"><button class="btn btn-default btn-block dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' +
                                 _.get(uniqueFilePermissions[index], "user.displayName") +
                                 '<span class="caret"></span></button>' +
                                 '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">' +
@@ -367,16 +368,41 @@
             await removeEmails();
         }
     </script>
-    <div class="jumbotron text-center">
-        <Header>
-            <h1>Welcome to Drive Permission Manager</h1>
-        </Header>
-    </div>
-    <div class="preview-pane">
-        <div class="access-top">
-            <h1>Preview</h1>
+    <div class="pos-f-t">
+        <div class="navbar-header">
+            <div class="collapse" id="navbarToggleExternalContent">
+                <div class="bg-dark p-4">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item active">
+                            <a class="nav-link" href="https://www.boisestate.edu/cybersecurity/">Institute for Pervasive Cybersecurity</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="https://www.boisestate.edu/coen-cs/currentstudents/senior-design-projects/#team-1">Other Senior Design Projects</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
-        <button type="button" class="btn btn-primary add" data-toggle="modal" data-target="#myModal">Add</button>
+    </div>
+    <nav class="navbar navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">Drive Permission Manager</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggleExternalContent"
+            aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </nav>
+    </div>
+    <div>
+        <br>
+        </br>
+    </div>
+    <div class="access-top">
+        <h2>My Files</h2>
+        <hr class="style13">
+    </div>
+
+    <div class="preview-pane">
+        <button type="button" class="btn btn-success add" data-toggle="modal" data-target="#myModal">Add</button>
         <div class="modal fade" id="myModal" tabindex="-1" data-backdrop="static" data-keyboard="true"
             aria-labelledby="myModalLabel" aria-hidden="true">
             <div class="modal-dialog  modal-dialog-centered">
@@ -411,7 +437,7 @@
                 </div>
             </div>
         </div>
-        <button type="button" onclick="emailRemoveListAwaiter()" class="btn btn-primary remove" data-toggle="modal"
+        <button type="button" onclick="emailRemoveListAwaiter()" class="btn btn-danger remove" data-toggle="modal"
             data-target="#myModal2">Remove</button>
         <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" data-backdrop="true" data-keyboard="true"
             aria-labelledby="myModalLabel" aria-hidden="true">
@@ -437,10 +463,6 @@
             </script>
     </div>
     <div class="enum-pane" id='box'>
-        <div class="access-top">
-            <h1>Drive Contents</h1>
-        </div>
-
         <script>
             // Create an array of all the files/folders that are children of another folder
             const children = files.reduce((children, curr) => {
@@ -458,14 +480,14 @@
                     console.log("event.target.parentNode is not null: " + fileId);
 
                 }
-                else if(event.target.classList.contains("checkbox")){ 
+                else if (event.target.classList.contains("checkbox")) {
                     fileId = event.target.parentNode.parentNode.id;
                     console.log("event.target is not null: " + fileId);
                 }
                 else {
                     fileId = event.target.parentNode.parentNode.parentNode.id;
                     console.log("event.target.parentNode is null: " + fileId);
-              
+
                 }
                 getGrandchildren(fileId).then(res => res.forEach(f => files.push(f)));
                 preview(files, fileId);
@@ -506,7 +528,6 @@
                 checkbox.name = 'fileCheckBoxes';
                 button.classList.add('button');
                 label.innerHTML = file.name;
-
 
                 // if a parent and has children add folder icon
                 let folderIcon = document.createElement('icon');
