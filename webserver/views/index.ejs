@@ -37,7 +37,7 @@
         * the files from the response and matched to the corresponding files in the global files array. The files array is then updated with the new files, which contain the updated 
         * permissions.
         */
-        function addPermission() {
+        async function addPermission() {
             let emailQuery = document.getElementById("emailTextEntry").value;
             let emailArray = emailQuery.split("\n");
             let roleQuery = document.getElementById("inputState").value;
@@ -69,7 +69,7 @@
                 fileIdArray.push(fileIds[i].parentElement.parentElement.id);
             }
             //post request to /addPermissions
-            requestAddPermissions(fileIdArray, roleQuery, "user", emailArray).then(
+            await requestAddPermissions(fileIdArray, roleQuery, "user", emailArray).then(
                 (res) => {
                     if (res) {
                         //replaces implicated files with updated files
@@ -132,11 +132,12 @@
          * @param {File[]} files - The global array of files loaded in the front end.
          *
          */
-        function preview(files, fileId) {
+        async function preview(files, fileId) {
             if (
                 document.querySelectorAll("input[name=fileCheckBoxes]:checked").length < 1
             ) {
                 const previewFile = _.find(files, { id: fileId });
+                const fileIdArray = [fileId];
                 let ownerDropDown =
                     "<p>" +
                     '<h2 id="singleSelectId" name ="' +
@@ -146,6 +147,7 @@
                     "</h2>" +
                     "</p>";
                 let filePermissions = [];
+                let uniqueFilePermissions =[];
                 let accessList = [];
                 //owner information drop down
                 ownerDropDown =
@@ -163,32 +165,59 @@
                     "</ul>" +
                     "</div>";
                 //access holder information drop down
-                filePermissions = _.get(previewFile, "permissions");
-                if (typeof filePermissions !== "undefined") {
-                    for (let index = 0; index < filePermissions.length; index++) {
+                //filePermissions = _.get(previewFile, "permissions");
+                await getPermissions(fileIdArray).then((res) => {
+                    if (res) {
+                        for (const permission of res) {
+                            if (permission.role !== "owner") {
+                                filePermissions.push(permission);
+                            }
+                        }
+                    } else {
+                        console.warn("no res from getPermissions");
+                    }
+                });
+
+                for(let i=0; i < filePermissions.length; i++){
+                    let unique = true;
+                    for(let j=0; j < uniqueFilePermissions.length; j++){
+                        if(filePermissions[i].user.emailAddress == uniqueFilePermissions[j].user.emailAddress){
+                            unique = false;
+                            break;
+                        }
+                    }
+                    if(unique){
+                        uniqueFilePermissions.push(filePermissions[i]);
+                    }
+                }
+
+                //get array of permissions with unique email addresses
+
+                if (typeof uniqueFilePermissions !== "undefined") {
+                    for (let index = 0; index < uniqueFilePermissions.length; index++) {
                         if (
-                            _.get(filePermissions[index], "user.displayName") !==
+                            _.get(uniqueFilePermissions[index], "user.displayName") !==
                             "drive-permission-manager@driver-permission-manager.iam.gserviceaccount.com" &&
                             _.get(previewFile, "owners[0].displayName") !==
-                            _.get(filePermissions[index], "user.displayName")
+                            _.get(uniqueFilePermissions[index], "user.displayName")
                         ) {
                             let accessHolderDropDown =
                                 '<div name="info" class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' +
-                                _.get(filePermissions[index], "user.displayName") +
+                                _.get(uniqueFilePermissions[index], "user.displayName") +
                                 '<span class="caret"></span></button>' +
                                 '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">' +
                                 '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' +
                                 "<b>EMAIL: </b>" +
                                 " " +
-                                _.get(filePermissions[index], "user.emailAddress") +
+                                _.get(uniqueFilePermissions[index], "user.emailAddress") +
                                 "</a></li>" +
                                 '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' +
                                 "<b>ROLE: </b>" +
-                                _.get(filePermissions[index], "role") +
+                                _.get(uniqueFilePermissions[index], "role") +
                                 "</a></li>" +
                                 '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' +
                                 "<b>EXPIRES: </b>" +
-                                _.get(filePermissions[index], "expirationDate") +
+                                _.get(uniqueFilePermissions[index], "expirationDate") +
                                 "</a></li>" +
                                 "</ul>" +
                                 "</div>";
