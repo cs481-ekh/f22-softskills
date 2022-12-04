@@ -27,6 +27,7 @@
     <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <title>Drive Permission Manager</title>
 </head>
 
 <body>
@@ -34,7 +35,7 @@
         function addPermission() {
             let emails = document.getElementById('emailTextEntry').value;
             let role = document.getElementById('inputState').value;
-            let fileIds = Array.from(document.querySelectorAll("input[type=checkbox]:checked"));
+            let fileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
             let fileIdArray = [];
             let emailArray = emails.split('\n');
 
@@ -60,8 +61,6 @@
                         file.parentElement.style.backgroundColor = '#7ECDFA';
                     });
                     document.getElementById('list').innerHTML = '';
-                } else {
-                    console.log("no res for addPermission");
                 }
             });
         }
@@ -69,8 +68,13 @@
         function checkBoxCounter() {
             let checkboxes = document.querySelectorAll("input[name=fileCheckBoxes]:checked");
             let numSelected = checkboxes.length;
-            document.getElementById('list').innerHTML = '';
-            document.getElementById('list').innerHTML = '<div class = "selected-preview">' + '<h1 class = "file-counter">' + '<p id ="countText">' + numSelected + ' file(s) selected.' + '</p>' + '</h1>' + '</div>'
+            if (numSelected > 0) {
+                document.getElementById('list').innerHTML = '';
+                document.getElementById('list').innerHTML = '<div class = "selected-preview">' + '<h1 class = "file-counter">' + '<p id ="countText">' + numSelected + ' file(s) selected.' + '</p>' + '</h1>' + '</div>'
+            }
+            else {
+                document.getElementById('list').innerHTML = '';
+            }
         }
 
         function getCheckBoxCounter() {
@@ -86,17 +90,20 @@
                 titleOwner = titleOwner + '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">'
                 titleOwner = titleOwner + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(previewFile, 'owners[0].emailAddress') + '</a></li>'
                 titleOwner = titleOwner + '</ul>' + '</div>';
-                let filePermissions = _.get(previewFile, 'permissions');
+                let filePermissions = [];
                 let accessList = [];
-                for (let index = 0; index < filePermissions.length; index++) {
-                    if (_.get(filePermissions[index], 'user.displayName') !== "drive-permission-manager@driver-permission-manager.iam.gserviceaccount.com" && _.get(previewFile, 'owners[0].displayName') !== _.get(filePermissions[index], 'user.displayName')) {
-                        let accessHolder = '<div name="info" class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' + _.get(filePermissions[index], 'user.displayName') + '<span class="caret"></span></button>'
-                        accessHolder = accessHolder + '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">'
-                        accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(filePermissions[index], 'user.emailAddress') + '</a></li>'
-                        accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>ROLE: </b>' + _.get(filePermissions[index], 'role') + '</a></li>'
-                        accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EXPIRES: </b>' + _.get(filePermissions[index], 'expirationDate') + '</a></li>'
-                        accessHolder = accessHolder + '</ul>' + '</div>'
-                        accessList = accessList + accessHolder;
+                filePermissions = _.get(previewFile, 'permissions');
+                if (typeof (filePermissions) !== "undefined") {
+                    for (let index = 0; index < filePermissions.length; index++) {
+                        if (_.get(filePermissions[index], 'user.displayName') !== "drive-permission-manager@driver-permission-manager.iam.gserviceaccount.com" && _.get(previewFile, 'owners[0].displayName') !== _.get(filePermissions[index], 'user.displayName')) {
+                            let accessHolder = '<div name="info" class = "dropdown"><button class="btn btn-default dropdown-toggle" type="button" width="100" id="menu1" data-toggle="dropdown">' + _.get(filePermissions[index], 'user.displayName') + '<span class="caret"></span></button>'
+                            accessHolder = accessHolder + '<ul class="dropdown-menu" role="menu" aria-labelledby="menu1">'
+                            accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EMAIL: </b>' + ' ' + _.get(filePermissions[index], 'user.emailAddress') + '</a></li>'
+                            accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>ROLE: </b>' + _.get(filePermissions[index], 'role') + '</a></li>'
+                            accessHolder = accessHolder + '<li role="presentation"><a role="menuitem" tabindex="-1" href="#">' + '<b>EXPIRES: </b>' + _.get(filePermissions[index], 'expirationDate') + '</a></li>'
+                            accessHolder = accessHolder + '</ul>' + '</div>'
+                            accessList = accessList + accessHolder;
+                        }
                     }
                 }
                 document.getElementById('list').innerHTML = '';
@@ -104,93 +111,85 @@
             }
         }
 
-        function emailRemoveList() {
-            let files = JSON.parse(`<%- JSON.stringify(array)%>`)
+        async function emailRemoveListAwaiter() {
+            await emailRemoveList();
+        }
+
+        async function removeEmailsAwaiter() {
+            await removeEmails();
+        }
+
+        //await wherever I call this or .then
+        async function emailRemoveList() {
             let fileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
-            let matchedFiles = [];
             let matchedFilesPermissions = [];
-            let emails = [];
+            let emailArray = [];
             let emailRemoveList = [];
 
             for (let i = 0; i < fileIds.length; i++) {
-                for (let j = 0; j < files.length; j++) {
-                    if (_.get(files[j], 'id') == fileIds[i].parentElement.parentElement.id) {
-                        matchedFiles.push(files[j]);
+                fileIds[i] = fileIds[i].parentElement.parentElement.id;
+            }
+
+            getPermissions(fileIds).then(res => {
+                if (res) {
+                    for (const permission of res) {
+                        if (permission.role !== 'owner') {
+                            matchedFilesPermissions.push(permission.id);
+                            emailArray.push(permission.user.emailAddress);
+                        }
                     }
+                    let uniqueEmails = [...new Set(emailArray)];
+                    let uniqueEmailArray = Array.from(uniqueEmails);
+                    for (let i = 0; i < uniqueEmailArray.length; i++) {
+                        emailRemoveList = emailRemoveList + '<div class="form-check"><input class="form-check-input" label="removeCheckBox" type="checkbox" value="' + uniqueEmailArray[i] + '" id="flexCheckDefault">  <label class="form-check-label" for="flexCheckDefault">' + uniqueEmailArray[i] + '</label> </div>';
+                    }
+                    document.getElementById('emailRemoveList').innerHTML = emailRemoveList;
                 }
-            }
-
-            for (let i = 0; i < matchedFiles.length; i++) {
-                matchedFilesPermissions.push(_.get(matchedFiles[i], 'permissions'));
-            }
-
-            for (let i = 0; i < matchedFilesPermissions.length; i++) {
-                for (let j = 0; j < matchedFilesPermissions[i].length; j++) {
-                    emails.push(_.get(matchedFilesPermissions[i][j], 'user.emailAddress'));
+                else {
+                    console.log('no res from getPermissions');
                 }
-            }
-
-
-            let uniqueEmails = [...new Set(emails)];
-            let uniqueEmailArray = Array.from(uniqueEmails);
-
-            console.log(uniqueEmailArray);
-
-            for (let i = 0; i < uniqueEmailArray.length; i++) {
-                emailRemoveList = emailRemoveList + '<div class="form-check"><input class="form-check-input" label="removeCheckBox" type="checkbox" value="' + uniqueEmailArray[i] + '" id="flexCheckDefault">  <label class="form-check-label" for="flexCheckDefault">' + uniqueEmailArray[i] + '</label> </div>';
-            }
-
-            document.getElementById('emailRemoveList').innerHTML = emailRemoveList;
+            });
         }
 
-        function removeEmails() {
-            let files = JSON.parse(`<%- JSON.stringify(array)%>`)
+        async function removeEmails() {
+            /**
+             * NOTES:
+             * - remove uneccesary getPermissions call
+             *  - use emails, not permission ids
+             * - pass selected file ids to removeEmails from emailRemoveList?
+             */
             let removeFileIds = Array.from(document.querySelectorAll("input[name=fileCheckBoxes]:checked"));
             let removeCheckboxes = document.querySelectorAll("input[label=removeCheckBox]:checked");
             let emailsToRemove = [];
-            let fileIdsToRemove = Array.from(removeCheckboxes);
-            let matchedFiles = [];
-            let matchedFilesPermissions = [];
-            let permissionIdsToRemove = [];
+            let fileIds = [];
 
             for (let i = 0; i < removeCheckboxes.length; i++) {
                 emailsToRemove.push(removeCheckboxes[i].value);
             }
 
-            emailsToRemove = Array.from(emailsToRemove);
-
             for (let i = 0; i < removeFileIds.length; i++) {
-                for (let j = 0; j < files.length; j++) {
-                    if (_.get(files[j], 'id') == removeFileIds[i].parentElement.parentElement.id) {
-                        matchedFiles.push(files[j]);
-                    }
-                }
+                fileIds.push(removeFileIds[i].parentElement.parentElement.id);
             }
 
-            for (let i = 0; i < matchedFiles.length; i++) {
-                matchedFilesPermissions.push(_.get(matchedFiles[i], 'permissions'));
-            }
-
-            for (let i = 0; i < matchedFilesPermissions.length; i++) {
-                for (let j = 0; j < matchedFilesPermissions[i].length; j++) {
-                    for (let k = 0; k < emailsToRemove.length; k++) {
-                        if (_.get(matchedFilesPermissions[i][j], 'user.emailAddress') == emailsToRemove[k]) {
-                            permissionIdsToRemove.push(_.get(matchedFilesPermissions[i][j], 'id'));
+            requestRemovePermissions(fileIds, emailsToRemove, null).then(res => {
+                if (res) {
+                    res.forEach(file => {
+                        for (let i = 0; i < files.length; i++) {
+                            if (files[i].id == file.id) {
+                                files[i] = file;
+                                break;
+                            }
                         }
-                    }
+                    })
+                    const isChecked = removeFileIds;
+                    isChecked.forEach((file) => {
+                        file.checked = false;
+                        file.parentElement.style.backgroundColor = '#7ECDFA';
+                    });
+                    document.getElementById('list').innerHTML = '';
                 }
-            }
-
-            console.log(permissionIdsToRemove);
-
-            //requestRemovePermissionByEmail(removeFileIds, emailsToRemove);
-
+            });
         }
-
-
-
-
-
     </script>
 
     <div class="jumbotron text-center">
@@ -237,7 +236,7 @@
                 </div>
             </div>
         </div>
-        <button type="button" onclick="emailRemoveList()" class="btn btn-primary remove" data-toggle="modal"
+        <button type="button" onclick="emailRemoveListAwaiter()" class="btn btn-primary remove" data-toggle="modal"
             data-target="#myModal2">Remove</button>
         <div class="modal fade" id="myModal2" tabindex="-1" role="dialog" data-backdrop="true" data-keyboard="true"
             aria-labelledby="myModalLabel" aria-hidden="true">
@@ -250,7 +249,7 @@
                     <div class="removeList" id="emailRemoveList"></div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="removeEmails()"
+                        <button type="button" class="btn btn-primary" onclick="removeEmailsAwaiter()"
                             data-dismiss="modal">Confirm</button>
                     </div>
                 </div>
@@ -314,99 +313,106 @@
                 const container = document.createElement('div');
                 checkbox.type = 'checkbox';
                 checkbox.className = 'checkbox';
+                checkbox.name = 'fileCheckBoxes';
                 button.classList.add('button');
                 label.innerHTML = file.name;
 
 
                 // if a parent and has children add folder icon
                 let folderIcon = document.createElement('icon');
-                switch (file.mimeType) {
-                    case 'application/vnd.google-apps.folder':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'folder';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.file':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'insert_drive_file';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.document':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'description';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.spreadsheet':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'table_chart';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.presentation':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'slideshow';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.drawing':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'insert_photo';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.form':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'assignment';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.map':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'map';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.photo':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'photo';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.script':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'code';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.site':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'web';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.video':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'video_library';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.audio':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'audiotrack';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.unknown':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'help';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.drive-sdk':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'help';
-                        container.appendChild(folderIcon)
-                        break;
-                    case 'application/vnd.google-apps.jam':
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'help';
-                        container.appendChild(folderIcon)
-                        break;
-                    default:
-                        folderIcon.className = 'material-icons';
-                        folderIcon.textContent = 'insert_drive_file';
-                        container.appendChild(folderIcon)
-                        break;
-                }
+                // if (file.children && file.children.length > 0) {
+                //     folderIcon.className = 'material-icons';
+                //     folderIcon.textContent = 'folder';
+                //     container.appendChild(folderIcon);
+                // } else {
+                    switch (file.mimeType) {
+                        case 'application/vnd.google-apps.folder':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'folder';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.file':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'insert_drive_file';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.document':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'description';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.spreadsheet':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'table_chart';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.presentation':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'slideshow';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.drawing':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'insert_photo';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.form':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'assignment';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.map':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'map';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.photo':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'photo';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.script':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'code';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.site':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'web';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.video':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'video_library';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.audio':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'audiotrack';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.unknown':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'help';
+                            container.appendChild(folderIcon) / get
+                            break;
+                        case 'application/vnd.google-apps.drive-sdk':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'help';
+                            container.appendChild(folderIcon)
+                            break;
+                        case 'application/vnd.google-apps.jam':
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'help';
+                            container.appendChild(folderIcon)
+                            break;
+                        default:
+                            folderIcon.className = 'material-icons';
+                            folderIcon.textContent = 'insert_drive_file';
+                            container.appendChild(folderIcon)
+                            break;
+                    }
+                // }
 
                 container.appendChild(label);
                 button.addEventListener('click', onClickHandler);
@@ -456,49 +462,49 @@
             }
 
             const box = document.getElementById('box');
-            const setPermission = async (fileIds) => {
-                const url = `/deletePermissions`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        fileIds: fileIds
-                    })
-                });
-                if (response.status !== 200) {
-                    throw new Error('Error setting permission');
-                }
-            }
+            // const setPermission = async (fileIds) => {
+            //     const url = `/deletePermissions`;
+            //     const response = await fetch(url, {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json',
+            //         },
+            //         body: JSON.stringify({
+            //             fileIds: fileIds
+            //         })
+            //     });
+            //     if (response.status !== 200) {
+            //         throw new Error('Error setting permission');
+            //     }
+            // }
 
-            function removePermission() {
-                const fileIds = [];
-                const checkBoxes = document.getElementsByClassName('checkbox');
-                const isChecked = Array.from(checkBoxes).filter((checkbox) => checkbox.checked);
-                isChecked.forEach((file) => {
-                    fileIds.push(file.parentElement.parentElement.id);
-                });
-                requestRemovePermissions(fileIds).then(res => {
-                    if (res) {
-                        res.forEach(file => {
-                            for (let i = 0; i < files.length; i++) {
-                                if (files[i].id == file.id) {
-                                    files[i] = file;
-                                    break;
-                                }
-                            }
-                        })
-                        isChecked.forEach((file) => {
-                            file.checked = false;
-                            file.parentElement.style.backgroundColor = '#7ECDFA';
-                        });
-                        document.getElementById('list').innerHTML = '';
-                    } else {
-                        console.log("no res for removePermission");
-                    }
-                });
-            }
+            // function removePermission() {
+            //     const fileIds = [];
+            //     const checkBoxes = document.getElementsByClassName('checkbox');
+            //     const isChecked = Array.from(checkBoxes).filter((checkbox) => checkbox.checked);
+            //     isChecked.forEach((file) => {
+            //         fileIds.push(file.parentElement.parentElement.id);
+            //     });
+            //     requestRemovePermissions(fileIds).then(res => {
+            //         if (res) {
+            //             res.forEach(file => {
+            //                 for (let i = 0; i < files.length; i++) {
+            //                     if (files[i].id == file.id) {
+            //                         files[i] = file;
+            //                         break;
+            //                     }
+            //                 }
+            //             })
+            //             isChecked.forEach((file) => {
+            //                 file.checked = false;
+            //                 file.parentElement.style.backgroundColor = '#7ECDFA';
+            //             });
+            //             document.getElementById('list').innerHTML = '';
+            //         } else {
+            //             console.log("no res for removePermission");
+            //         }
+            //     });
+            // }
             // Add the root parent folders to the root container to start
             rootParents.forEach((parent) => {
                 box.appendChild(createButton(parent, ['parent']));
