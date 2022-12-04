@@ -24,9 +24,10 @@ when an employee or employees are leaving an organization and need to have their
 ## What We Actually Built:
 Drive Permission Manager uses a TypeScript back end, a PostgreSQL database, an Express middleware with oath2-passport authentication node server, and an EJS front end. The back end uses gaxios to interface with Google Drive's API. The front end uses the Google Drive API to authenticate the user and then uses the back end to pull the user's drive contents into the database. The front end then uses the database to display the user's drive contents. The front end also uses the back end to modify permissions on the user's drive files. The end result is the user is able to batch modify file permissions across multiple files and file hierarchies in their Google Drive.
 
-![image](/docs/images/full.PNG)
-![image](/docs/images/multiselect.PNG)
-![image](/docs/images/add.PNG)
-![image](/docs/images/remove.PNG)
-![image](/docs/images/dropdownpreview.PNG)
-![image](/docs/images/ownerpreview.PNG)
+![Imgur](https://i.imgur.com/nyRZRio.png)
+![Imgur](https://i.imgur.com/5pNNUQx.png)
+![Imgur](https://i.imgur.com/2Nq4RAi.png)
+![Imgur](https://i.imgur.com/Qv7GXvT.png)
+![Imgur](https://i.imgur.com/5gsjoaT.png)
+![Imgur](https://i.imgur.com/LZvDnap.png)
+
