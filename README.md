@@ -26,3 +26,70 @@ Drive Permission Manager uses a TypeScript back end, a PostgreSQL database, an E
 
 [![Docker CI](https://github.com/cs481-ekh/f22-softskills/actions/workflows/docker-ci.yml/badge.svg)](https://github.com/cs481-ekh/f22-softskills/actions/workflows/docker-ci.yml)
 
+# **Getting Started**
+
+# Things You'll Need
+- [A Google Account](https://cloud.google.com/apis/docs/getting-started#creating_a_google_account)
+- [A Google Project](https://cloud.google.com/apis/docs/getting-started#creating_a_google_project)
+- [Google Drive API Enabled In Your Project](https://cloud.google.com/apis/docs/getting-started#enabling_apis)
+- [Docker](https://docs.docker.com/get-docker/)
+- [Access Credentials For Your Google Project](https://cloud.google.com/apis/docs/getting-started#getting_application_credentials)
+
+# Installing And Running
+
+ ### **Step 1: Create .env file in /webserver**
+ Create a .env file inside of the webserver directory with the env_template file provided.
+
+ The only fields you need to modify are the following:
+
+    GOOGLE_CLIENT_ID=<your google project client id here>
+    GOOGLE_CLIENT_SECRET=<your google project client secret here>
+    GOOGLE_API_KEY=<your google project api key here>
+    GDRIVE_EMAIL=<drive email address here>
+
+**Important Note:** The GDRIVE_EMAIL field is what the application will use later to initialize the database. Whatever drive data you want to use in this application must be accessible by that account address.
+
+---
+### **Step 2. Build The Docker Images**
+Run the build.sh script to build the docker images for the webserver and database.
+
+    $ ./build.sh
+---
+### **Step 3. Create And Run Docker Containers**
+Run the run.sh script to create and start the docker containers for the webserver and database.
+
+    $ ./run.sh
+
+---
+### **Step 4. Navigate To Application In Your Web Browser**
+
+View the application in the browser at address localhost:3000/
+
+---
+
+### **Step 5. Login To Application To Initialize Database**
+
+Login to the application with the account matching the GDRIVE_EMAIL value you specified in the .env file from Step 1.
+
+
+**Note:** This can take a long time so go grab a cup of your favorite warm beverage while it does its thing :)
+
+---
+
+### **Step 6. Using The Application**
+ The application will eventually load the root contents of your Google Drive and you will be able to use
+the application. Be warned that some of the operations can take a while so use the application carefully and responsibily.
+
+---
+
+## **Cleaning Up**
+ When you are finishing running the application run the clean.sh script:
+
+    $ ./clean.sh
+
+# **Debugging / Potential Pitfalls**
+* **Shared Drives:** During development we tested our functionality using an account with only a My Drive. The usability of this project with a shared drive or drives isn't something that was tested. It may work, it may not.
+
+* **Speed:**  This application is slow and very slow for large drives. At the time of creation, it doesn't seem like Google has a batch request option for a project like ours and thus calls to the server for adding or removing permissions from a file can take a while depending on the amount of work needed.
+
+* **Persistence:**  Do not keep this application running after you are done using it. It currently does not have a way to stay in sync with changes that happen to a user's Google Drive outside of this application. Use it for short periods of time only.

@@ -1,2 +1,3 @@
 #!/bin/bash
-exit 127
+docker-compose down
+exit 0;
