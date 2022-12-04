@@ -49,7 +49,7 @@ export class Permissions {
         await this.pool.query("INSERT INTO Permissions (ID, FILEID, TYPE, ROLE, EXPIRATION_DATE, "
             + "DELETED, PENDING_OWNER, GRANTEE_USER) VALUES ('" + permission.id + "', '" + permission.fileId
             + "', '" + permission.type + "', '" + permission.role + "', '" + permission.expirationDate + "', '"
-            + permission.deleted + "', '" + permission.pendingOwner + "', '" + permission.user.emailAddress
+            + permission.deleted + "', '" + (permission.pendingOwner ? true : false) + "', '" + permission.user.emailAddress
             + "') ON CONFLICT (ID) DO NOTHING;").then(async res => {
                 if (!res)
                     console.error("Error in permissions.create");
