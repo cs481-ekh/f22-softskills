@@ -313,8 +313,6 @@
                 fileIdArray.push(enumPaneSelection[i].parentElement.parentElement.id);
             }
 
-
-
             requestRemovePermissions(fileIdArray, emailArray, null).then((res) => {
                 if (res) {
                     res.forEach((file) => {
@@ -354,6 +352,9 @@
             await removeEmails();
         }
     </script>
+    <script type="text/JavaScript">
+        const files = JSON.parse(`<%- JSON.stringify(array)%>`);
+        </script>
     <div class="pos-f-t">
         <div class="navbar-header">
             <div class="collapse" id="navbarToggleExternalContent">
@@ -372,14 +373,14 @@
                 </div>
             </div>
         </div>
-    </div>
-    <nav class="navbar navbar-dark bg-dark">
-        <a class="navbar-brand" href="/">Drive Permission Manager</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggleExternalContent"
-            aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </nav>
+        <nav class="navbar navbar-dark bg-dark">
+            <a class="navbar-brand" href="/">Drive Permission Manager</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse"
+                data-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent"
+                aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </nav>
     </div>
     <div>
         <br>
@@ -389,7 +390,6 @@
         <h2>My Files</h2>
         <hr class="style13">
     </div>
-
     <div class="preview-pane">
         <button type="button" class="btn btn-success add" data-toggle="modal" data-target="#myModal">Add</button>
         <div class="modal fade" id="myModal" tabindex="-1" data-backdrop="static" data-keyboard="true"
@@ -447,9 +447,6 @@
         </div>
         <p id='list'>
         </p>
-        <script type="text/JavaScript">
-        const files = JSON.parse(`<%- JSON.stringify(array)%>`);
-        </script>
     </div>
     <div class="enum-pane" id='box'></div>
     <script>
@@ -464,19 +461,18 @@
             event.stopPropagation();
             // Select the button's parent (button container) and all its children nodes
             let fileId = [];
-            if (event.target.parentNode.id) {
-                fileId = event.target.parentNode.id;
-                console.log("event.target.parentNode is not null: " + fileId);
 
+            if (event.target.parentNode.id.length !== 0 && event.target.parentNode.id !== "box") {
+                fileId = event.target.parentNode.id;
             }
-            else if (event.target.parentNode.parentNode.parentNode.id === "box") {
+            else if (event.target.parentNode.parentNode.id.length !== 0 && event.target.parentNode.parentNode.id !== "box") {
                 fileId = event.target.parentNode.parentNode.id;
-                console.log("event.target is not null: " + fileId);
+            }
+            else if (event.target.parentNode.parentNode.parentNode.id.length !== 0 && event.target.parentNode.parentNode.parentNode.id !== "box") {
+                fileId = event.target.parentNode.parentNode.parentNode.id;
             }
             else {
-                fileId = event.target.parentNode.parentNode.parentNode.id;
-                console.log("event.target.parentNode is null: " + fileId);
-
+                console.log('Failed to get fileId from button');
             }
             getGrandchildren(fileId).then(res => res.forEach(f => files.push(f)));
             preview(files, fileId);
