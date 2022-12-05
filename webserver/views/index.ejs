@@ -49,18 +49,6 @@
             emailArray = emailArray.filter(function (entry) {
                 return entry.trim() != "";
             });
-            for (let i = 0; i < roleQuery.length; i++) {
-                if (
-                    roleQuery[i] == "writer" ||
-                    roleQuery[i] == "reader" ||
-                    roleQuery[i] == "commenter"
-                ) {
-                    roleArray = roleQuery[i];
-                    break;
-                } else {
-                    console.warn("Invalid role");
-                }
-            }
             //dom manipulation
             document.getElementById("emailTextEntry").value = "";
             document.getElementById("inputState").value = "choose...";
